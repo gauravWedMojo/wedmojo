@@ -673,4 +673,122 @@ class CommonController extends Controller
             return response()->json($response,__('messages.statusCode.INVALID_CREDENTIAL'));
        }
     }
+
+    public function update_profile(Request $request){
+        Log::info('----------------------CommonController--------------------------update_profile'.print_r($request->all(),True));
+        $accessToken = $request->header('accessToken');
+        $destinationPathOfProfile = public_path().'/'.'Images/';
+        $name = $request->name;
+        // $mobile = $request->mobile;
+        $email = $request->email;
+        $profile_image = $request->profile_image;
+
+        $USER = User::Where(['remember_token' => $accessToken])->first();
+        if(count($USER)){
+            $validations = [
+                'profile_image' => 'required',
+                'name' => 'required',
+                /*'mobile' => [
+                    'required',
+                    Rule::unique('users')->ignore($USER->id),
+                ],*/
+                'email' => [
+                    Rule::unique('users')->ignore($USER->id),
+                ],
+            ];
+            $validator = Validator::make($request->all(),$validations);
+            if( $validator->fails() ) {
+                $response = [
+                    'message' => $validator->errors($validator)->first(),
+                ];
+                return Response::json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+            } else {
+                if(isset($_FILES['profile_image']['tmp_name'])){
+                    $big = explode('/', $USER->profile_image['big']);
+                    $small = explode('/', $USER->profile_image['small']);
+                    $thumbnail = explode('/', $USER->profile_image['thumbnail']);
+                    if( file_exists( public_path().'/Images/'.end($big) ) ) {
+                        unlink(public_path().'/Images/'.end($big));
+                    }
+                    if(file_exists(public_path().'/Images/'.end($small))){
+                        unlink(public_path().'/Images/'.end($small));
+                    }
+                    if( file_exists(public_path().'/Images/'.end($thumbnail)) ) {
+                        unlink(public_path().'/Images/'.end($thumbnail));
+                    }
+                    $uploadedfile = $_FILES['profile_image']['tmp_name'];
+                    $fileName1 = substr($this->uploadImage($profile_image,$uploadedfile,$destinationPathOfProfile),9); 
+                    $USER->profile_image = $fileName1;
+                }
+                $user = new User;
+                $USER->name = $name;
+                $USER->email = $email;
+                $USER->updated_at = time();
+                $USER->save();
+                $userData = $user::where(['id' => $USER->id])->first();
+                $response = [
+                    'message' =>  __('messages.success.profile_updated'),
+                    'response' => $userData,
+                ];
+                Log::info('CommonController----complete_profile----'.print_r($response,True));
+                return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+            }
+        }else{
+            $response = [
+                'message' => __('messages.invalid.detail'),
+            ];
+            return Response::json($response,trans('messages.statusCode.INVALID_ACCESS_TOKEN'));
+        }
+    }
+
+    public function uploadImage($photo,$uploadedfile,$destinationPathOfPhoto){
+        /*$photo = $request->file('photo');
+        $uploadedfile = $_FILES['photo']['tmp_name'];
+        $destinationPathOfPhoto = public_path().'/'.'thumbnail/';*/
+        $fileName = time()."_".$photo->getClientOriginalName();
+        $src = "";
+        $i = strrpos($fileName,".");
+        $l = strlen($fileName) - $i;
+        $ext = substr($fileName,$i+1);
+
+        if($ext=="jpg" || $ext=="jpeg" || $ext=="JPG" || $ext=="JPEG"){
+            $src = imagecreatefromjpeg($uploadedfile);
+        }else if($ext=="png" || $ext=="PNG"){
+            $src = imagecreatefrompng($uploadedfile);
+        }else if($ext=="gif" || $ext=="GIF"){
+            $src = imagecreatefromgif($uploadedfile);
+        }else{
+            $src = imagecreatefrombmp($uploadedfile);
+        }
+        $newwidth  = 200;
+        list($width,$height)=getimagesize($uploadedfile);
+        $newheight=($height/$width)*$newwidth;
+        $tmp=imagecreatetruecolor($newwidth,$newheight);
+        imagecopyresampled($tmp,$src,0,0,0,0,$newwidth,$newheight,$width,$height);
+        $filename = $destinationPathOfPhoto.'small'.'_'.$fileName; 
+        imagejpeg($tmp,$filename,100);
+        imagedestroy($tmp);
+        $filename = explode('/', $filename);
+
+        $newwidth1  = 400;
+        list($width,$height)=getimagesize($uploadedfile);
+        $newheight1=($height/$width)*$newwidth1;
+        $tmp=imagecreatetruecolor($newwidth1,$newheight1);
+        imagecopyresampled($tmp,$src,0,0,0,0,$newwidth1,$newheight1,$width,$height);
+        $filename = $destinationPathOfPhoto.'big'.'_'.$fileName; 
+        imagejpeg($tmp,$filename,100);
+        imagedestroy($tmp);
+        $filename = explode('/', $filename);
+
+        $newwidth2  = 100;
+        list($width,$height)=getimagesize($uploadedfile);
+        $newheight2=($height/$width)*$newwidth2;
+        $tmp=imagecreatetruecolor($newwidth2,$newheight2);
+        imagecopyresampled($tmp,$src,0,0,0,0,$newwidth2,$newheight2,$width,$height);
+        $filename = $destinationPathOfPhoto.'thumbnail'.'_'.$fileName; 
+        imagejpeg($tmp,$filename,100);
+        imagedestroy($tmp);
+        $filename = explode('/', $filename);
+        return $filename[7];
+    }
 }

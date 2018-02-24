@@ -62,5 +62,18 @@ class User extends Model
 			return $value;
 		}
 	}
+
+	public function getProfileImageAttribute($value){
+		if(empty($value)){
+			return "";
+		}else{
+			$response = [
+				'big' => url('/public/images').'/big'.$value,
+				'small' => url('/public/images').'/small'.$value,
+				'thumbnail' => url('/public/images').'/thumbnail'.$value,
+			];
+			return json_decode(json_encode($response),True);
+		}
+	}
 }
 
