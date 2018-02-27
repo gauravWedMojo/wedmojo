@@ -10,6 +10,7 @@ use Hash;
 use Exception;
 use Config;
 use \App\Models\User;
+use \App\Models\Wedding;
 use Twilio\Rest\Client;
 use Illuminate\Validation\Rule;
 
@@ -678,7 +679,8 @@ class CommonController extends Controller
         Log::info('----------------------CommonController--------------------------update_profile'.print_r($request->all(),True));
         $accessToken = $request->header('accessToken');
         $destinationPathOfProfile = public_path().'/'.'Images/';
-        $name = $request->name;
+        $first_name = $request->first_name;
+        $last_name = $request->last_name;
         // $mobile = $request->mobile;
         $email = $request->email;
         $profile_image = $request->profile_image;
@@ -687,7 +689,8 @@ class CommonController extends Controller
         if(count($USER)){
             $validations = [
                 'profile_image' => 'required',
-                'name' => 'required',
+                'first_name' => 'required',
+                'last_name' => 'required',
                 /*'mobile' => [
                     'required',
                     Rule::unique('users')->ignore($USER->id),
@@ -721,7 +724,8 @@ class CommonController extends Controller
                     $USER->profile_image = $fileName1;
                 }
                 $user = new User;
-                $USER->name = $name;
+                $USER->first_name = $first_name;
+                $USER->last_name = $last_name;
                 $USER->email = $email;
                 $USER->updated_at = time();
                 $USER->save();
@@ -790,5 +794,114 @@ class CommonController extends Controller
         imagedestroy($tmp);
         $filename = explode('/', $filename);
         return $filename[7];
+    }
+
+
+    public function setup_wedding( Request $request ){
+        $UserDetail = $request->userDetail;
+        $groom_id = null;
+        $bride_id = null;
+        $host_id = null;
+        $vendor_id = null;
+
+        $validations = [
+            'g_first_name' => 'required',
+            'g_last_name' => 'required',
+            'g_contact_number' => 'required',
+
+            'b_first_name' => 'required',
+            'b_last_name' => 'required',
+            'b_contact_number' => 'required',
+
+            'location' => 'required',
+            'wedding_date' => 'required'
+        ];
+        $messages = [
+            'g_first_name.required' => 'Groom first name is required.',
+            'g_last_name.required' => 'Groom last name is required.',
+            'g_contact_number.required' => 'Groom contact number is required.',
+
+            'b_first_name.required' => 'Bride first name is required.',
+            'b_last_name.required' => 'Bride last name is required.',
+            'b_contact_number.required' => 'Bride contact number is required.',
+
+        ];
+        $validator = Validator::make($request->all(),$validations,$messages);
+        if( $validator->fails() ) {
+            $response = [
+                'message' => $validator->errors($validator)->first(),
+            ];
+            return Response::json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+        }
+
+
+
+        $g_first_name = $request->g_first_name; 
+        $g_last_name = $request->g_last_name; 
+        $g_contact_number = $request->g_contact_number; 
+
+        $b_first_name = $request->b_first_name; 
+        $b_last_name = $request->b_last_name; 
+        $b_contact_number = $request->b_contact_number; 
+        $location = $request->location;
+        $wedding_date = $request->wedding_date;
+
+        // dd($g_contact_number);
+
+        switch ($UserDetail->user_type) {
+            case 'bride':
+                $user_type = 1;
+                $Wedding = Wedding::firstOrNew(['bride_id' => $UserDetail->id]);
+
+                $Wedding->bride_first_name = $b_first_name;
+                $Wedding->bride_last_name = $b_last_name;
+                $Wedding->bride_contact_number = $b_contact_number;
+
+                $Wedding->groom_first_name = $g_first_name;
+                $Wedding->groom_last_name = $g_last_name;
+                $Wedding->groom_contact_number = $g_contact_number;
+                $Wedding->location = $location;
+                $Wedding->wedding_date = $wedding_date;
+                
+                $groomDetail = User::where(['mobile' => $g_contact_number])->first();
+                if($groomDetail){
+                    $groomDetail->first_name = $g_first_name; // here bride can change groom name
+                    $groomDetail->last_name = $g_last_name;  // here bride can change groom name
+                    $groomDetail->save();
+                    $Wedding->groom_id = $groomDetail->id;
+                }else{
+                    $groom_creation = User::firstOrCreate(['mobile' => $g_contact_number ,'user_type' => 2]);
+                    $groom_creation->first_name = $g_first_name;
+                    $groom_creation->last_name = $g_last_name;
+                    $groom_creation->save();    
+                    $Wedding->groom_id = $groom_creation->id;
+                }
+                $Wedding->save();
+                $response = [
+                    'message' => 'success',
+                    'response' => $Wedding
+                ];
+                return response()->json($response,200);
+                break;
+            case 'groom':
+                $user_type = 2;
+                $groom_id = $UserDetail->id;
+                break;
+            /*case 'host':
+                $user_type = 3;
+                $host_id = $UserDetail->id;
+                break;
+            case 'vendor':
+                $user_type = 4;
+                $vendor_id = $UserDetail->id;
+                break;*/
+        }
+
+    }
+
+
+    public function create_host(Request $request){
+
+
     }
 }

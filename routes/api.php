@@ -19,23 +19,25 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::match(['post'],'sign_up','CommonController@sign_up');
 Route::post('otpVerify','CommonController@otpVerify');
-
-
 Route::post('login','CommonController@login');
 Route::match(['post'],'social_sign_up_and_login','CommonController@social_sign_up_and_login');
 Route::post('resendOtp','CommonController@resendOtp');
+Route::post('forgetPassword','CommonController@forgetPassword');
+Route::post('changeMobileNumber','CommonController@changeMobileNumber');
+
 Route::post('create_category','CategoryController@Create');
 Route::post('create_country','CountryController@create');
 Route::get('category_list','CategoryController@List');
 Route::delete('category','CategoryController@delete');
-Route::post('forgetPassword','CommonController@forgetPassword');
-Route::post('changeMobileNumber','CommonController@changeMobileNumber');
+
 
 
 
 
 Route::group(['middleware'=>['ApiAuthentication']],function(){
 	Route::post('logout','CommonController@logout');
+	Route::post('setup_wedding','CommonController@setup_wedding');
+
 	Route::post('complete_profile','CommonController@complete_profile');
 	Route::post('change_password','CommonController@change_password');
 	Route::post('change_passcode','CommonController@change_passcode');
