@@ -10,7 +10,13 @@ class Wedding extends Model
     protected $table = 'wedding_detail';
     protected $fillable = ['bride_id'];
 
-    public function getGroomIdAttribute($value){
-    		return User::where(['id' => $value])->first();
+    public function getGroomImageAttribute($value){
+    		return url('/public/Images/WeddingImages').'/'.$value;
     }
+
+    public function getBrideImageAttribute($value){
+    		return url('/public/Images/WeddingImages').'/'.$value;
+    }
+
+
 }

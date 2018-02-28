@@ -803,28 +803,27 @@ class CommonController extends Controller
         $bride_id = null;
         $host_id = null;
         $vendor_id = null;
-
         $validations = [
             'g_first_name' => 'required',
             'g_last_name' => 'required',
             'g_contact_number' => 'required',
-
             'b_first_name' => 'required',
             'b_last_name' => 'required',
             'b_contact_number' => 'required',
-
             'location' => 'required',
-            'wedding_date' => 'required'
+            'wedding_date' => 'required',
+            'g_image' => 'required',
+            'b_image' => 'required',
         ];
         $messages = [
             'g_first_name.required' => 'Groom first name is required.',
             'g_last_name.required' => 'Groom last name is required.',
             'g_contact_number.required' => 'Groom contact number is required.',
-
+            'g_image.required' => 'Groom image is required',
             'b_first_name.required' => 'Bride first name is required.',
             'b_last_name.required' => 'Bride last name is required.',
             'b_contact_number.required' => 'Bride contact number is required.',
-
+            'b_image.required' => 'Bride image is required',
         ];
         $validator = Validator::make($request->all(),$validations,$messages);
         if( $validator->fails() ) {
@@ -834,7 +833,7 @@ class CommonController extends Controller
             return Response::json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
         }
 
-
+        // dd($request->all());
 
         $g_first_name = $request->g_first_name; 
         $g_last_name = $request->g_last_name; 
@@ -846,16 +845,21 @@ class CommonController extends Controller
         $location = $request->location;
         $wedding_date = $request->wedding_date;
 
-        // dd($g_contact_number);
+        $groom_image = $request->g_image;
+        $bride_image = $request->b_image;
 
         switch ($UserDetail->user_type) {
             case 'bride':
                 $user_type = 1;
                 $Wedding = Wedding::firstOrNew(['bride_id' => $UserDetail->id]);
-
                 $Wedding->bride_first_name = $b_first_name;
                 $Wedding->bride_last_name = $b_last_name;
                 $Wedding->bride_contact_number = $b_contact_number;
+
+                /*$brideDetail = User::where(['id' => $UserDetail->id])->first();
+                $brideDetail->first_name = $b_first_name;
+                $brideDetail->last_name = $b_last_name;
+                $brideDetail->save();*/  // for update detail of bride at user table
 
                 $Wedding->groom_first_name = $g_first_name;
                 $Wedding->groom_last_name = $g_last_name;
@@ -863,16 +867,38 @@ class CommonController extends Controller
                 $Wedding->location = $location;
                 $Wedding->wedding_date = $wedding_date;
                 
+                $destinationPath = public_path().'/'.'Images/WeddingImages';
+                $g_filename = time().'_g_'.$groom_image->getClientOriginalName();
+                $b_filename = time().'_b_'.$bride_image->getClientOriginalName();
+
+                $groom_image->move($destinationPath,$g_filename);
+                $bride_image->move($destinationPath,$b_filename);
+
+
+                $Wedding->groom_image = $g_filename;
+                $Wedding->bride_image = $b_filename;
+
                 $groomDetail = User::where(['mobile' => $g_contact_number])->first();
                 if($groomDetail){
-                    $groomDetail->first_name = $g_first_name; // here bride can change groom name
-                    $groomDetail->last_name = $g_last_name;  // here bride can change groom name
-                    $groomDetail->save();
-                    $Wedding->groom_id = $groomDetail->id;
+                    // dd('exist');
+                    if($groomDetail->user_type != 'bride'){
+                        // $groomDetail->first_name = $g_first_name; // here bride can change groom name
+                        // $groomDetail->last_name = $g_last_name;  // here bride can change groom name
+                        // $groomDetail->save();
+                        $Wedding->groom_id = $groomDetail->id;    
+                    }else{
+                        $response = [
+                            'message' => 'Mobile is already registered.',
+                        ];
+                        return response()->json($response,400);
+                    }
                 }else{
+                    // dd('not');
                     $groom_creation = User::firstOrCreate(['mobile' => $g_contact_number ,'user_type' => 2]);
                     $groom_creation->first_name = $g_first_name;
                     $groom_creation->last_name = $g_last_name;
+                        // here i have to send this password to groom if he is not registered
+                    $groom_creation->password = Hash::make(11111111); 
                     $groom_creation->save();    
                     $Wedding->groom_id = $groom_creation->id;
                 }
@@ -883,10 +909,66 @@ class CommonController extends Controller
                 ];
                 return response()->json($response,200);
                 break;
+
             case 'groom':
                 $user_type = 2;
                 $groom_id = $UserDetail->id;
+                $Wedding = Wedding::firstOrNew(['groom_id' => $groom_id]);
+                $Wedding->groom_first_name = $g_first_name;
+                $Wedding->groom_last_name = $g_last_name;
+                $Wedding->groom_contact_number = $g_contact_number;
+
+                $Wedding->bride_first_name = $b_first_name;
+                $Wedding->bride_last_name = $b_last_name;
+                $Wedding->bride_contact_number = $b_contact_number;
+                $Wedding->location = $location;
+                $Wedding->wedding_date = $wedding_date;
+
+                $destinationPath = public_path().'/'.'Images/WeddingImages';
+                $g_filename = time().'_g_'.$groom_image->getClientOriginalName();
+                $b_filename = time().'_b_'.$bride_image->getClientOriginalName();
+
+                $groom_image->move($destinationPath,$g_filename);
+                $bride_image->move($destinationPath,$b_filename);
+
+
+                $Wedding->groom_image = $g_filename;
+                $Wedding->bride_image = $b_filename;
+
+                $brideDetail = User::where(['mobile' => $b_contact_number])->first();
+                if($brideDetail){
+                    // dd('exist');
+                    if($brideDetail->user_type != 'groom'){
+                        // $brideDetail->first_name = $b_first_name; // here bride can change groom name
+                        // $brideDetail->last_name = $b_last_name;  // here bride can change groom name
+                        // $brideDetail->save();
+                        $Wedding->bride_id = $brideDetail->id;    
+                    }else{
+                        $response = [
+                            'message' => 'Mobile is already registered.',
+                        ];
+                        return response()->json($response,400);
+                    }
+                }else{
+                    // dd('not');
+                    $bride_creation = User::firstOrCreate(['mobile' => $b_contact_number ,'user_type' => 1]);
+                    $bride_creation->first_name = $b_first_name;
+                    $bride_creation->last_name = $b_last_name;
+                        // here i have to send this password to bride if he is not registered
+                    $bride_creation->password = Hash::make(11111111); 
+                    $bride_creation->save();    
+                    $Wedding->groom_id = $bride_creation->id;
+                }
+
+                $Wedding->save();
+                $response = [
+                    'message' => 'success',
+                    'response' => $Wedding
+                ];
+                return response()->json($response,200);
                 break;
+
+
             /*case 'host':
                 $user_type = 3;
                 $host_id = $UserDetail->id;
