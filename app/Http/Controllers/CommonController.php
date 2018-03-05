@@ -11,6 +11,7 @@ use Exception;
 use Config;
 use \App\Models\User;
 use \App\Models\Wedding;
+use \App\Models\CreateFunction;
 use Twilio\Rest\Client;
 use Illuminate\Validation\Rule;
 
@@ -833,7 +834,6 @@ class CommonController extends Controller
             return Response::json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
         }
 
-        // dd($request->all());
 
         $g_first_name = $request->g_first_name; 
         $g_last_name = $request->g_last_name; 
@@ -890,7 +890,7 @@ class CommonController extends Controller
                         $response = [
                             'message' => 'Mobile is already registered.',
                         ];
-                        return response()->json($response,400);
+                        return response()->json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
                     }
                 }else{
                     // dd('not');
@@ -907,13 +907,14 @@ class CommonController extends Controller
                     'message' => 'success',
                     'response' => $Wedding
                 ];
-                return response()->json($response,200);
+                return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
                 break;
 
             case 'groom':
                 $user_type = 2;
                 $groom_id = $UserDetail->id;
-                $Wedding = Wedding::firstOrNew(['groom_id' => $groom_id]);
+                $Wedding = Wedding::firstOrNew(['groom_contact_number' => $g_contact_number]);
+                $Wedding->groom_id = $groom_id;
                 $Wedding->groom_first_name = $g_first_name;
                 $Wedding->groom_last_name = $g_last_name;
                 $Wedding->groom_contact_number = $g_contact_number;
@@ -937,6 +938,7 @@ class CommonController extends Controller
 
                 $brideDetail = User::where(['mobile' => $b_contact_number])->first();
                 if($brideDetail){
+                    // dd($brideDetail->user_type);
                     // dd('exist');
                     if($brideDetail->user_type != 'groom'){
                         // $brideDetail->first_name = $b_first_name; // here bride can change groom name
@@ -947,7 +949,7 @@ class CommonController extends Controller
                         $response = [
                             'message' => 'Mobile is already registered.',
                         ];
-                        return response()->json($response,400);
+                        return response()->json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
                     }
                 }else{
                     // dd('not');
@@ -965,7 +967,7 @@ class CommonController extends Controller
                     'message' => 'success',
                     'response' => $Wedding
                 ];
-                return response()->json($response,200);
+                return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
                 break;
 
 
@@ -978,12 +980,71 @@ class CommonController extends Controller
                 $vendor_id = $UserDetail->id;
                 break;*/
         }
-
     }
 
 
     public function create_host(Request $request){
+        $UserDetail = $request->userDetail;
+        $name = $request->name;
+        $relation = $request->relation;
+        $mobile = $request->mobile;
 
+        $validations = [
+            'name' => 'required',
+            'relation' => 'required',
+            'mobile' => 'required|unique:users',
+        ];
+        $validator = Validator::make($request->all(),$validations);
+        if( $validator->fails() ){
+           $response = [
+            'message'=>$validator->errors($validator)->first()
+           ];
+           return Response::json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
+        }else{
 
+            $UserDetail = User::firstOrCreate(['mobile' => $mobile ,'user_type' => 3]);
+            $UserDetail->first_name = $name;
+            $UserDetail->relation = $relation;
+            $UserDetail->created_by_user_id = $UserDetail->id;
+            $UserDetail->save();
+            $response = [
+                'message' => 'success',
+                'response' => $UserDetail
+            ];
+            return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+        }
+    }
+
+    public function create_function(Request $request){
+        $UserDetail = $request->userDetail;
+        $function_name = $request->function_name;
+        $function_image = $request->function_image;
+        $function_date = $request->function_date;
+
+        $validations = [
+            'function_name' => 'required',
+            'function_image' => 'required',
+            'function_date' => 'required',
+        ];
+        $validator = Validator::make($request->all(),$validations);
+        if( $validator->fails() ){
+           $response = [
+            'message'=>$validator->errors($validator)->first()
+           ];
+           return Response::json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
+        }else{
+
+            $function_detail = CreateFunction::firstOrCreate(['function_name' => $function_name, 'function_date' => $function_date,'created_by_user_id' => $UserDetail->id]);
+
+            $destinationPath = public_path().'/'.'Images/FunctionImages';
+            $fileName = time().'_'.$function_image->getClientOriginalName();
+            $function_image->move($destinationPath,$fileName);
+            $function_detail->function_image = $fileName;
+            $function_detail->save();
+            $response = [
+                'message' => 'success',
+            ];
+            return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+        }
     }
 }

@@ -37,6 +37,8 @@ Route::delete('category','CategoryController@delete');
 Route::group(['middleware'=>['ApiAuthentication']],function(){
 	Route::post('logout','CommonController@logout');
 	Route::post('setup_wedding','CommonController@setup_wedding');
+	Route::post('create_host','CommonController@create_host');
+	Route::post('create_function','CommonController@create_function');
 
 	Route::post('complete_profile','CommonController@complete_profile');
 	Route::post('change_password','CommonController@change_password');
