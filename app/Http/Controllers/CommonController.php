@@ -79,13 +79,17 @@ class CommonController extends Controller
         $user_type = $request->user_type;
         $accessToken  = md5(uniqid(rand(), true));
         $timezone = $request->header('timezone');
+        $first_name = $request->first_name;
+        $last_name = $request->last_name;
+        $profile_image = $request->profile_image;
+        
         $otp = rand(100000,1000000);
         if($timezone){
             $this->setTimeZone($timezone);
         }
         $validations = [
             'social_id' => 'required',
-            'email' => 'required|email',
+            'email' => 'required|email:unique',
             'device_token' => 'required',
             'device_type' => 'required|numeric',
             'user_type' => 'required|numeric',
@@ -104,7 +108,10 @@ class CommonController extends Controller
                 $validations = [
                     'email' => 'required|email|unique:users',
                     'social_id' => 'required|unique:users',
-                    'mobile' => 'required|unique:users'
+                    'mobile' => 'required|unique:users',
+                    'first_name' => 'required',
+                    'last_name' => 'required',
+                    'profileImage' => 'required',
                 ];
                 $validator = Validator::make($request->all(),$validations);
                 if($validator->fails()){
@@ -121,6 +128,10 @@ class CommonController extends Controller
                     $User->device_type = $device_type;
                     $User->user_type = $user_type;
                     $User->remember_token = $accessToken;
+                    $User->first_name = $first_name;
+                    $User->last_name = $last_name;
+                    $User->profile_image = $profile_image;
+                    $User->complete_profile_status = 1;
                     $User->created_at = time();
                     $User->updated_at = time();
                     $User->save();
@@ -139,6 +150,13 @@ class CommonController extends Controller
                 $User = User::find($user->id);
                 $User->remember_token = $accessToken;
                 $User->updated_at = time();
+
+                if($User->otp_verified != 1){
+                    $User->otp = $otp;
+                    $User->otp_verified = 0;
+                    $this->sendOtp($User->mobile,$otp);
+                }
+                
                 $User->save();
                 $userData = User::where(['id' => $User->id])->first();
                 $response = [
@@ -235,6 +253,7 @@ class CommonController extends Controller
         $device_token = $request->device_token;
         $device_type = $request->device_type;
         $accessToken  = md5(uniqid(rand(), true));
+        $otp = rand(100000,1000000);
         $timezone = $request->header('timezone');
         $validations = [
             'mobile' => 'required',
@@ -274,6 +293,11 @@ class CommonController extends Controller
                         if(Hash::check($password,$userDetail->password)){
                             $User = new User;
                             $UserDetail = $User::find($userDetail->id);
+                            if($UserDetail->otp_verified != 1){
+                                $UserDetail->otp = $otp;
+                                $UserDetail->otp_verified = 0;
+                                $this->sendOtp($UserDetail->mobile,$otp);
+                            }
                             $UserDetail->device_token = $device_token;
                             $UserDetail->device_type = $device_type;
                             $UserDetail->remember_token = $accessToken;
@@ -343,7 +367,7 @@ class CommonController extends Controller
                 ->phoneNumbers("+14154291712")
                 ->fetch(array("type" => "carrier"));
             $client->messages->create(
-                $mobile, array(
+                implode('',explode('-', $mobile)), array(
                     'from' => '+14154291712',
                     'body' => 'Wed Mojo: please enter this code to verify :'.$otp
                 )
@@ -708,17 +732,23 @@ class CommonController extends Controller
                 return Response::json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
             } else {
                 if(isset($_FILES['profile_image']['tmp_name'])){
-                    $big = explode('/', $USER->profile_image['big']);
-                    $small = explode('/', $USER->profile_image['small']);
-                    $thumbnail = explode('/', $USER->profile_image['thumbnail']);
-                    if( file_exists( public_path().'/Images/'.end($big) ) ) {
-                        unlink(public_path().'/Images/'.end($big));
-                    }
-                    if(file_exists(public_path().'/Images/'.end($small))){
-                        unlink(public_path().'/Images/'.end($small));
-                    }
-                    if( file_exists(public_path().'/Images/'.end($thumbnail)) ) {
-                        unlink(public_path().'/Images/'.end($thumbnail));
+                    /*dd($USER->profile_image);
+                    dd( $USER->profile_image['big'] );
+                    dd( explode( '/', $USER->profile_image['big'] ) );
+                    */
+                    if( $USER->profile_image ){
+                        $big = explode('/', $USER->profile_image['big']);
+                        $small = explode('/', $USER->profile_image['small']);
+                        $thumbnail = explode('/', $USER->profile_image['thumbnail']);
+                        if( file_exists( public_path().'/Images/'.end($big) ) ) {
+                            unlink(public_path().'/Images/'.end($big));
+                        }
+                        if(file_exists(public_path().'/Images/'.end($small))){
+                            unlink(public_path().'/Images/'.end($small));
+                        }
+                        if( file_exists(public_path().'/Images/'.end($thumbnail)) ) {
+                            unlink(public_path().'/Images/'.end($thumbnail));
+                        }
                     }
                     $uploadedfile = $_FILES['profile_image']['tmp_name'];
                     $fileName1 = substr($this->uploadImage($profile_image,$uploadedfile,$destinationPathOfProfile),9); 
@@ -727,6 +757,7 @@ class CommonController extends Controller
                 $user = new User;
                 $USER->first_name = $first_name;
                 $USER->last_name = $last_name;
+                $USER->complete_profile_status = 1;
                 $USER->email = $email;
                 $USER->updated_at = time();
                 $USER->save();
@@ -848,6 +879,8 @@ class CommonController extends Controller
         $groom_image = $request->g_image;
         $bride_image = $request->b_image;
 
+        // dd($UserDetail->user_type);
+
         switch ($UserDetail->user_type) {
             case 'bride':
                 $user_type = 1;
@@ -884,7 +917,8 @@ class CommonController extends Controller
                     if($groomDetail->user_type != 'bride'){
                         // $groomDetail->first_name = $g_first_name; // here bride can change groom name
                         // $groomDetail->last_name = $g_last_name;  // here bride can change groom name
-                        // $groomDetail->save();
+                        $groomDetail->wedding_status = 1;
+                        $groomDetail->save();
                         $Wedding->groom_id = $groomDetail->id;    
                     }else{
                         $response = [
@@ -899,9 +933,12 @@ class CommonController extends Controller
                     $groom_creation->last_name = $g_last_name;
                         // here i have to send this password to groom if he is not registered
                     $groom_creation->password = Hash::make(11111111); 
+                    $groom_creation->wedding_status = 1;
                     $groom_creation->save();    
                     $Wedding->groom_id = $groom_creation->id;
                 }
+                $UserDetail->wedding_status = 1;
+                $UserDetail->save();
                 $Wedding->save();
                 $response = [
                     'message' => 'success',
@@ -943,7 +980,8 @@ class CommonController extends Controller
                     if($brideDetail->user_type != 'groom'){
                         // $brideDetail->first_name = $b_first_name; // here bride can change groom name
                         // $brideDetail->last_name = $b_last_name;  // here bride can change groom name
-                        // $brideDetail->save();
+                        $brideDetail->wedding_status = 1;
+                        $brideDetail->save();
                         $Wedding->bride_id = $brideDetail->id;    
                     }else{
                         $response = [
@@ -958,10 +996,13 @@ class CommonController extends Controller
                     $bride_creation->last_name = $b_last_name;
                         // here i have to send this password to bride if he is not registered
                     $bride_creation->password = Hash::make(11111111); 
+                    $bride_creation->wedding_status = 1;
                     $bride_creation->save();    
                     $Wedding->groom_id = $bride_creation->id;
                 }
 
+                $UserDetail->wedding_status = 1;
+                $UserDetail->save();
                 $Wedding->save();
                 $response = [
                     'message' => 'success',
@@ -984,7 +1025,7 @@ class CommonController extends Controller
 
 
     public function create_host(Request $request){
-        $UserDetail = $request->userDetail;
+        $userDetail = $request->userDetail;
         $name = $request->name;
         $relation = $request->relation;
         $mobile = $request->mobile;
@@ -1005,7 +1046,7 @@ class CommonController extends Controller
             $UserDetail = User::firstOrCreate(['mobile' => $mobile ,'user_type' => 3]);
             $UserDetail->first_name = $name;
             $UserDetail->relation = $relation;
-            $UserDetail->created_by_user_id = $UserDetail->id;
+            $UserDetail->created_by_user_id = $userDetail->id;
             $UserDetail->save();
             $response = [
                 'message' => 'success',
@@ -1015,7 +1056,85 @@ class CommonController extends Controller
         }
     }
 
-    public function create_function(Request $request){
+    public function edit_host(Request $request){
+        $userDetail = $request->userDetail;
+        // dd($userDetail);
+        $name = $request->name;
+        $relation = $request->relation;
+        $mobile = $request->mobile;
+        $host_id = $request->host_id;
+
+        $validations = [
+            'name' => 'required',
+            'relation' => 'required',
+            'host_id' => 'required',
+            'mobile' => [
+                Rule::unique('users')->ignore($host_id),
+            ],
+        ];
+        $validator = Validator::make($request->all(),$validations);
+        if( $validator->fails() ){
+           $response = [
+            'message'=>$validator->errors($validator)->first()
+           ];
+           return Response::json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
+        }else{
+
+            $UserDetail = User::firstOrNew(['id' => $host_id ,'user_type' => 3]);
+            if($UserDetail){
+                $UserDetail->first_name = $name;
+                $UserDetail->relation = $relation;
+                $UserDetail->mobile = $mobile;
+                $UserDetail->created_by_user_id = $userDetail->id;
+                $UserDetail->save();
+                $response = [
+                    'message' => 'success',
+                    'response' => $UserDetail
+                ];
+                return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+            }else{
+                $response = [
+                    'message' => __('messages.invalid.request')
+                ];
+                return Response::json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
+            }
+        }
+    }
+
+    public function delete_host(Request $request){
+        $userDetail = $request->userDetail;
+        // dd($userDetail);
+        $host_id = $request->host_id;
+        $validations = [
+            'host_id' => 'required',
+        ];
+        $validator = Validator::make($request->all(),$validations);
+        if( $validator->fails() ){
+           $response = [
+            'message'=>$validator->errors($validator)->first()
+           ];
+           return Response::json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
+        }else{
+            $UserDetail = User::firstOrNew(['id' => $host_id ,'user_type' => 3]);
+            // dd($UserDetail);
+            if($UserDetail){
+                $UserDetail->delete();
+                $response = [
+                    'message' => 'success',
+                ];
+                return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+            }else{
+                $response = [
+                    'message' => __('messages.invalid.request')
+                ];
+                return Response::json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
+            }
+        }
+    }
+
+
+
+    /*public function create_function(Request $request){
         $UserDetail = $request->userDetail;
         $function_name = $request->function_name;
         $function_image = $request->function_image;
@@ -1046,5 +1165,5 @@ class CommonController extends Controller
             ];
             return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
         }
-    }
+    }*/
 }
