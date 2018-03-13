@@ -360,8 +360,8 @@ class CommonController extends Controller
 
     public function sendOtp($mobile,$otp) {
         try{
-            $sid = 'AC6ceef3619be02e48da4aba2512cc426b';
-            $token = 'eeaa38187028b4a0a9c4f4e105162b6e';
+            $sid = 'ACb833d0dd2e4ed510d90163fb1f0c2785';   //'AC6ceef3619be02e48da4aba2512cc426b';
+            $token = '2f8bdff0e9d85af075c24c7e410e1241';    //'eeaa38187028b4a0a9c4f4e105162b6e';
             $client = new Client($sid, $token);
             $number = $client->lookups
                 ->phoneNumbers("+14154291712")
@@ -1132,6 +1132,10 @@ class CommonController extends Controller
         }
     }
 
+    public function get_host(Request $request){
+        $userDetail = $request->userDetail;
+        dd($userDetail);
+    }
 
 
     /*public function create_function(Request $request){

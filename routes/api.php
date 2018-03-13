@@ -36,5 +36,5 @@ Route::group(['middleware'=>['ApiAuthentication']],function(){
 	Route::post('change_password','CommonController@change_password');
 	Route::post('edit_host','CommonController@edit_host');
 	Route::post('delete_host','CommonController@delete_host');
-	
+	Route::match(['get','post'],'get_host','CommonController@get_host');
 });
