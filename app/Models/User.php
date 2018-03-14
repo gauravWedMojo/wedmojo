@@ -57,7 +57,7 @@ class User extends Model
 
 	public function getOtpVerifiedAttribute($value){
 		if(empty($value) && $value!='0'){
-			return "";
+			return "0";
 		}else{
 			return $value;
 		}
@@ -68,9 +68,9 @@ class User extends Model
 			return "";
 		}else{
 			$response = [
-				'big' => url('/public/images').'/big'.$value,
-				'small' => url('/public/images').'/small'.$value,
-				'thumbnail' => url('/public/images').'/thumbnail'.$value,
+				'big' => url('/public/Images').'/big'.$value,
+				'small' => url('/public/Images').'/small'.$value,
+				'thumbnail' => url('/public/Images').'/thumbnail'.$value,
 			];
 			return json_decode(json_encode($response),True);
 		}

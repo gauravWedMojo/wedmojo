@@ -111,7 +111,7 @@ class CommonController extends Controller
                     'mobile' => 'required|unique:users',
                     'first_name' => 'required',
                     'last_name' => 'required',
-                    'profileImage' => 'required',
+                    'profile_image' => 'required',
                 ];
                 $validator = Validator::make($request->all(),$validations);
                 if($validator->fails()){
@@ -139,7 +139,7 @@ class CommonController extends Controller
                     $userData['otp_response'] = $this->sendOtp($mobile,$otp);
                     if($User){
                         $response = [
-                            'messages' => __('messages.success.signup'),
+                            'message' => __('messages.success.signup'),
                             'response' => $userData
                         ];
                         return Response::json($response,__('messages.statusCode.ACTION_COMPLETE'));
@@ -160,7 +160,7 @@ class CommonController extends Controller
                 $User->save();
                 $userData = User::where(['id' => $User->id])->first();
                 $response = [
-                    'messages' => __('messages.success.login'),
+                    'message' => __('messages.success.login'),
                     'response' => $userData
                 ];
                 Log::info('CommonController----social_sign_up_and_login----'.print_r($response,True));
@@ -289,7 +289,13 @@ class CommonController extends Controller
                             $user_type = 'vendor';
                             break;
                     }
+
+                    // return $user_type;
+                    // return $userDetail->user_type;
+
                     if($userDetail->user_type == $user_type){
+                        // dd( Hash::check($password,$userDetail->password) );
+
                         if(Hash::check($password,$userDetail->password)){
                             $User = new User;
                             $UserDetail = $User::find($userDetail->id);
@@ -358,10 +364,10 @@ class CommonController extends Controller
         }
     }
 
-    public function sendOtp($mobile,$otp) {
+   /* public function sendOtp($mobile,$otp) {
         try{
-            $sid = 'ACb833d0dd2e4ed510d90163fb1f0c2785';   //'AC6ceef3619be02e48da4aba2512cc426b';
-            $token = '2f8bdff0e9d85af075c24c7e410e1241';    //'eeaa38187028b4a0a9c4f4e105162b6e';
+            $sid = 'AC6ceef3619be02e48da4aba2512cc426b';
+            $token = 'eeaa38187028b4a0a9c4f4e105162b6e';
             $client = new Client($sid, $token);
             $number = $client->lookups
                 ->phoneNumbers("+14154291712")
@@ -385,7 +391,47 @@ class CommonController extends Controller
             ];
             return $response;
         }
+    }*/
+
+
+    public function sendOtp($mobile,$otp) {
+        try{
+            $sid = 'AC6ceef3619be02e48da4aba2512cc426b';
+            $token = 'eeaa38187028b4a0a9c4f4e105162b6e';
+
+
+
+
+            /*$sid = 'ACb833d0dd2e4ed510d90163fb1f0c2785';   //'AC6ceef3619be02e48da4aba2512cc426b';
+            $token = '2f8bdff0e9d85af075c24c7e410e1241';    //'eeaa38187028b4a0a9c4f4e105162b6e';*/
+
+            $client = new Client($sid, $token);
+            $number = $client->lookups
+                // ->phoneNumbers("+17032151231")
+                ->phoneNumbers("+14154291712")
+                ->fetch(array("type" => "carrier"));
+            $client->messages->create(
+                implode('',explode('-', $mobile)), array(
+                    'from' => '+14154291712',
+                    'body' => 'Wed Mojo: please enter this code to verify :'.$otp
+                )
+            );
+            $response = [
+                'message' => 'success',
+                'status' => 1
+            ];
+            return $response;
+        } catch(Exception $e){
+            // dd($e->getMessage());
+            $response = [
+                'message' => $e->getMessage(),
+                'status' => 0
+            ];
+            return $response;
+        }
     }
+
+
 
     public function forgetPassword(Request $request) {
         Log::info('----------------------CommonController--------------------------forgetPassword'.print_r($request->all(),True));
@@ -1134,9 +1180,13 @@ class CommonController extends Controller
 
     public function get_host(Request $request){
         $userDetail = $request->userDetail;
-        dd($userDetail);
+        $hots_list = User::where(['created_by_user_id' => $userDetail->id ,'user_type' => 3])->get();
+        $response = [
+            'message' => 'Host list',
+            'response' => $hots_list
+        ];
+        return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
     }
-
 
     /*public function create_function(Request $request){
         $UserDetail = $request->userDetail;
