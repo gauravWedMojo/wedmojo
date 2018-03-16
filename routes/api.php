@@ -30,11 +30,12 @@ Route::post('changeMobileNumber','CommonController@changeMobileNumber');
 Route::group(['middleware'=>['ApiAuthentication']],function(){
 	Route::post('logout','CommonController@logout');
 	Route::post('update_profile','CommonController@update_profile');
-	Route::post('setup_wedding','CommonController@setup_wedding');
+	Route::match(['post','get'],'setup_wedding','CommonController@setup_wedding');
 	Route::post('create_host','CommonController@create_host');
 	Route::post('create_function','CommonController@create_function');
 	Route::post('change_password','CommonController@change_password');
 	Route::post('edit_host','CommonController@edit_host');
 	Route::post('delete_host','CommonController@delete_host');
 	Route::match(['get','post'],'get_host','CommonController@get_host');
+	Route::match(['get','post'],'feeds','CommonController@feeds');
 });

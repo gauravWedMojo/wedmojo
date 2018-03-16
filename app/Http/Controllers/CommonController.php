@@ -11,6 +11,7 @@ use Exception;
 use Config;
 use \App\Models\User;
 use \App\Models\Wedding;
+use \App\Models\Feeds;
 use \App\Models\CreateFunction;
 use Twilio\Rest\Client;
 use Illuminate\Validation\Rule;
@@ -877,195 +878,206 @@ class CommonController extends Controller
 
     public function setup_wedding( Request $request ){
         $UserDetail = $request->userDetail;
-        $groom_id = null;
-        $bride_id = null;
-        $host_id = null;
-        $vendor_id = null;
-        $validations = [
-            'g_first_name' => 'required',
-            'g_last_name' => 'required',
-            'g_contact_number' => 'required',
-            'b_first_name' => 'required',
-            'b_last_name' => 'required',
-            'b_contact_number' => 'required',
-            'location' => 'required',
-            'wedding_date' => 'required',
-            'g_image' => 'required',
-            'b_image' => 'required',
-        ];
-        $messages = [
-            'g_first_name.required' => 'Groom first name is required.',
-            'g_last_name.required' => 'Groom last name is required.',
-            'g_contact_number.required' => 'Groom contact number is required.',
-            'g_image.required' => 'Groom image is required',
-            'b_first_name.required' => 'Bride first name is required.',
-            'b_last_name.required' => 'Bride last name is required.',
-            'b_contact_number.required' => 'Bride contact number is required.',
-            'b_image.required' => 'Bride image is required',
-        ];
-        $validator = Validator::make($request->all(),$validations,$messages);
-        if( $validator->fails() ) {
-            $response = [
-                'message' => $validator->errors($validator)->first(),
+        if($request->method() == 'POST'){
+            $groom_id = null;
+            $bride_id = null;
+            $host_id = null;
+            $vendor_id = null;
+            $validations = [
+                'g_first_name' => 'required',
+                'g_last_name' => 'required',
+                'g_contact_number' => 'required',
+                'b_first_name' => 'required',
+                'b_last_name' => 'required',
+                'b_contact_number' => 'required',
+                'location' => 'required',
+                'wedding_date' => 'required',
+                'g_image' => 'required',
+                'b_image' => 'required',
             ];
-            return Response::json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+            $messages = [
+                'g_first_name.required' => 'Groom first name is required.',
+                'g_last_name.required' => 'Groom last name is required.',
+                'g_contact_number.required' => 'Groom contact number is required.',
+                'g_image.required' => 'Groom image is required',
+                'b_first_name.required' => 'Bride first name is required.',
+                'b_last_name.required' => 'Bride last name is required.',
+                'b_contact_number.required' => 'Bride contact number is required.',
+                'b_image.required' => 'Bride image is required',
+            ];
+            $validator = Validator::make($request->all(),$validations,$messages);
+            if( $validator->fails() ) {
+                $response = [
+                    'message' => $validator->errors($validator)->first(),
+                ];
+                return Response::json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+            }
+            $g_first_name = $request->g_first_name; 
+            $g_last_name = $request->g_last_name; 
+            $g_contact_number = $request->g_contact_number; 
+            $b_first_name = $request->b_first_name; 
+            $b_last_name = $request->b_last_name; 
+            $b_contact_number = $request->b_contact_number; 
+            $location = $request->location;
+            $wedding_date = $request->wedding_date;
+            $groom_image = $request->g_image;
+            $bride_image = $request->b_image;
+            // dd($UserDetail->user_type);
+            switch ($UserDetail->user_type) {
+                case 'bride':
+                    $user_type = 1;
+                    $Wedding = Wedding::firstOrNew(['bride_id' => $UserDetail->id]);
+                    $Wedding->bride_first_name = $b_first_name;
+                    $Wedding->bride_last_name = $b_last_name;
+                    $Wedding->bride_contact_number = $b_contact_number;
+
+                    /*$brideDetail = User::where(['id' => $UserDetail->id])->first();
+                    $brideDetail->first_name = $b_first_name;
+                    $brideDetail->last_name = $b_last_name;
+                    $brideDetail->save();*/  // for update detail of bride at user table
+
+                    $Wedding->groom_first_name = $g_first_name;
+                    $Wedding->groom_last_name = $g_last_name;
+                    $Wedding->groom_contact_number = $g_contact_number;
+                    $Wedding->location = $location;
+                    $Wedding->wedding_date = $wedding_date;
+                    
+                    $destinationPath = public_path().'/'.'Images/WeddingImages';
+                    $g_filename = time().'_g_'.$groom_image->getClientOriginalName();
+                    $b_filename = time().'_b_'.$bride_image->getClientOriginalName();
+
+                    $groom_image->move($destinationPath,$g_filename);
+                    $bride_image->move($destinationPath,$b_filename);
+
+
+                    $Wedding->groom_image = $g_filename;
+                    $Wedding->bride_image = $b_filename;
+
+                    $groomDetail = User::where(['mobile' => $g_contact_number])->first();
+                    if($groomDetail){
+                        // dd('exist');
+                        if($groomDetail->user_type != 'bride'){
+                            // $groomDetail->first_name = $g_first_name; // here bride can change groom name
+                            // $groomDetail->last_name = $g_last_name;  // here bride can change groom name
+                            $groomDetail->wedding_status = 1;
+                            $groomDetail->save();
+                            $Wedding->groom_id = $groomDetail->id;    
+                        }else{
+                            $response = [
+                                'message' => 'Mobile is already registered.',
+                            ];
+                            return response()->json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
+                        }
+                    }else{
+                        // dd('not');
+                        $groom_creation = User::firstOrCreate(['mobile' => $g_contact_number ,'user_type' => 2]);
+                        $groom_creation->first_name = $g_first_name;
+                        $groom_creation->last_name = $g_last_name;
+                            // here i have to send this password to groom if he is not registered
+                        $groom_creation->password = Hash::make(11111111); 
+                        $groom_creation->wedding_status = 1;
+                        $groom_creation->save();    
+                        $Wedding->groom_id = $groom_creation->id;
+                    }
+                    $UserDetail->wedding_status = 1;
+                    $UserDetail->save();
+                    $Wedding->save();
+                    $response = [
+                        'message' => 'success',
+                        'response' => $Wedding
+                    ];
+                    return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+                    break;
+
+                case 'groom':
+                    $user_type = 2;
+                    $groom_id = $UserDetail->id;
+                    $Wedding = Wedding::firstOrNew(['groom_contact_number' => $g_contact_number]);
+                    $Wedding->groom_id = $groom_id;
+                    $Wedding->groom_first_name = $g_first_name;
+                    $Wedding->groom_last_name = $g_last_name;
+                    $Wedding->groom_contact_number = $g_contact_number;
+
+                    $Wedding->bride_first_name = $b_first_name;
+                    $Wedding->bride_last_name = $b_last_name;
+                    $Wedding->bride_contact_number = $b_contact_number;
+                    $Wedding->location = $location;
+                    $Wedding->wedding_date = $wedding_date;
+
+                    $destinationPath = public_path().'/'.'Images/WeddingImages';
+                    $g_filename = time().'_g_'.$groom_image->getClientOriginalName();
+                    $b_filename = time().'_b_'.$bride_image->getClientOriginalName();
+
+                    $groom_image->move($destinationPath,$g_filename);
+                    $bride_image->move($destinationPath,$b_filename);
+
+
+                    $Wedding->groom_image = $g_filename;
+                    $Wedding->bride_image = $b_filename;
+
+                    $brideDetail = User::where(['mobile' => $b_contact_number])->first();
+                    if($brideDetail){
+                        // dd($brideDetail->user_type);
+                        // dd('exist');
+                        if($brideDetail->user_type != 'groom'){
+                            // $brideDetail->first_name = $b_first_name; // here bride can change groom name
+                            // $brideDetail->last_name = $b_last_name;  // here bride can change groom name
+                            $brideDetail->wedding_status = 1;
+                            $brideDetail->save();
+                            $Wedding->bride_id = $brideDetail->id;    
+                        }else{
+                            $response = [
+                                'message' => 'Mobile is already registered.',
+                            ];
+                            return response()->json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
+                        }
+                    }else{
+                        // dd('not');
+                        $bride_creation = User::firstOrCreate(['mobile' => $b_contact_number ,'user_type' => 1]);
+                        $bride_creation->first_name = $b_first_name;
+                        $bride_creation->last_name = $b_last_name;
+                            // here i have to send this password to bride if he is not registered
+                        $bride_creation->password = Hash::make(11111111); 
+                        $bride_creation->wedding_status = 1;
+                        $bride_creation->save();    
+                        $Wedding->groom_id = $bride_creation->id;
+                    }
+
+                    $UserDetail->wedding_status = 1;
+                    $UserDetail->save();
+                    $Wedding->save();
+                    $response = [
+                        'message' => 'success',
+                        'response' => $Wedding
+                    ];
+                    return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+                    break;
+
+
+                /*case 'host':
+                    $user_type = 3;
+                    $host_id = $UserDetail->id;
+                    break;
+                case 'vendor':
+                    $user_type = 4;
+                    $vendor_id = $UserDetail->id;
+                    break;*/
+            }
         }
 
-
-        $g_first_name = $request->g_first_name; 
-        $g_last_name = $request->g_last_name; 
-        $g_contact_number = $request->g_contact_number; 
-
-        $b_first_name = $request->b_first_name; 
-        $b_last_name = $request->b_last_name; 
-        $b_contact_number = $request->b_contact_number; 
-        $location = $request->location;
-        $wedding_date = $request->wedding_date;
-
-        $groom_image = $request->g_image;
-        $bride_image = $request->b_image;
-
-        // dd($UserDetail->user_type);
-
-        switch ($UserDetail->user_type) {
-            case 'bride':
-                $user_type = 1;
-                $Wedding = Wedding::firstOrNew(['bride_id' => $UserDetail->id]);
-                $Wedding->bride_first_name = $b_first_name;
-                $Wedding->bride_last_name = $b_last_name;
-                $Wedding->bride_contact_number = $b_contact_number;
-
-                /*$brideDetail = User::where(['id' => $UserDetail->id])->first();
-                $brideDetail->first_name = $b_first_name;
-                $brideDetail->last_name = $b_last_name;
-                $brideDetail->save();*/  // for update detail of bride at user table
-
-                $Wedding->groom_first_name = $g_first_name;
-                $Wedding->groom_last_name = $g_last_name;
-                $Wedding->groom_contact_number = $g_contact_number;
-                $Wedding->location = $location;
-                $Wedding->wedding_date = $wedding_date;
-                
-                $destinationPath = public_path().'/'.'Images/WeddingImages';
-                $g_filename = time().'_g_'.$groom_image->getClientOriginalName();
-                $b_filename = time().'_b_'.$bride_image->getClientOriginalName();
-
-                $groom_image->move($destinationPath,$g_filename);
-                $bride_image->move($destinationPath,$b_filename);
-
-
-                $Wedding->groom_image = $g_filename;
-                $Wedding->bride_image = $b_filename;
-
-                $groomDetail = User::where(['mobile' => $g_contact_number])->first();
-                if($groomDetail){
-                    // dd('exist');
-                    if($groomDetail->user_type != 'bride'){
-                        // $groomDetail->first_name = $g_first_name; // here bride can change groom name
-                        // $groomDetail->last_name = $g_last_name;  // here bride can change groom name
-                        $groomDetail->wedding_status = 1;
-                        $groomDetail->save();
-                        $Wedding->groom_id = $groomDetail->id;    
-                    }else{
-                        $response = [
-                            'message' => 'Mobile is already registered.',
-                        ];
-                        return response()->json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
-                    }
-                }else{
-                    // dd('not');
-                    $groom_creation = User::firstOrCreate(['mobile' => $g_contact_number ,'user_type' => 2]);
-                    $groom_creation->first_name = $g_first_name;
-                    $groom_creation->last_name = $g_last_name;
-                        // here i have to send this password to groom if he is not registered
-                    $groom_creation->password = Hash::make(11111111); 
-                    $groom_creation->wedding_status = 1;
-                    $groom_creation->save();    
-                    $Wedding->groom_id = $groom_creation->id;
-                }
-                $UserDetail->wedding_status = 1;
-                $UserDetail->save();
-                $Wedding->save();
-                $response = [
-                    'message' => 'success',
-                    'response' => $Wedding
-                ];
-                return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
-                break;
-
-            case 'groom':
-                $user_type = 2;
-                $groom_id = $UserDetail->id;
-                $Wedding = Wedding::firstOrNew(['groom_contact_number' => $g_contact_number]);
-                $Wedding->groom_id = $groom_id;
-                $Wedding->groom_first_name = $g_first_name;
-                $Wedding->groom_last_name = $g_last_name;
-                $Wedding->groom_contact_number = $g_contact_number;
-
-                $Wedding->bride_first_name = $b_first_name;
-                $Wedding->bride_last_name = $b_last_name;
-                $Wedding->bride_contact_number = $b_contact_number;
-                $Wedding->location = $location;
-                $Wedding->wedding_date = $wedding_date;
-
-                $destinationPath = public_path().'/'.'Images/WeddingImages';
-                $g_filename = time().'_g_'.$groom_image->getClientOriginalName();
-                $b_filename = time().'_b_'.$bride_image->getClientOriginalName();
-
-                $groom_image->move($destinationPath,$g_filename);
-                $bride_image->move($destinationPath,$b_filename);
-
-
-                $Wedding->groom_image = $g_filename;
-                $Wedding->bride_image = $b_filename;
-
-                $brideDetail = User::where(['mobile' => $b_contact_number])->first();
-                if($brideDetail){
-                    // dd($brideDetail->user_type);
-                    // dd('exist');
-                    if($brideDetail->user_type != 'groom'){
-                        // $brideDetail->first_name = $b_first_name; // here bride can change groom name
-                        // $brideDetail->last_name = $b_last_name;  // here bride can change groom name
-                        $brideDetail->wedding_status = 1;
-                        $brideDetail->save();
-                        $Wedding->bride_id = $brideDetail->id;    
-                    }else{
-                        $response = [
-                            'message' => 'Mobile is already registered.',
-                        ];
-                        return response()->json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
-                    }
-                }else{
-                    // dd('not');
-                    $bride_creation = User::firstOrCreate(['mobile' => $b_contact_number ,'user_type' => 1]);
-                    $bride_creation->first_name = $b_first_name;
-                    $bride_creation->last_name = $b_last_name;
-                        // here i have to send this password to bride if he is not registered
-                    $bride_creation->password = Hash::make(11111111); 
-                    $bride_creation->wedding_status = 1;
-                    $bride_creation->save();    
-                    $Wedding->groom_id = $bride_creation->id;
-                }
-
-                $UserDetail->wedding_status = 1;
-                $UserDetail->save();
-                $Wedding->save();
-                $response = [
-                    'message' => 'success',
-                    'response' => $Wedding
-                ];
-                return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
-                break;
-
-
-            /*case 'host':
-                $user_type = 3;
-                $host_id = $UserDetail->id;
-                break;
-            case 'vendor':
-                $user_type = 4;
-                $vendor_id = $UserDetail->id;
-                break;*/
+        if($request->method() == 'GET'){
+            if($UserDetail->user_type == 'bride'){
+                $data = Wedding::where([ 'bride_id' => $UserDetail->id ])->first();
+            }
+            if($UserDetail->user_type == 'groom'){
+                $data = Wedding::where([ 'groom_id' => $UserDetail->id ])->first();
+            }
+            
+            $response = [
+                'message' => __('messages.success.success'),
+                'response' => $data
+            ];
+            return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
         }
     }
 
@@ -1188,12 +1200,11 @@ class CommonController extends Controller
         return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
     }
 
-    /*public function create_function(Request $request){
+    public function create_function(Request $request){
         $UserDetail = $request->userDetail;
         $function_name = $request->function_name;
         $function_image = $request->function_image;
         $function_date = $request->function_date;
-
         $validations = [
             'function_name' => 'required',
             'function_image' => 'required',
@@ -1206,18 +1217,86 @@ class CommonController extends Controller
            ];
            return Response::json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
         }else{
-
             $function_detail = CreateFunction::firstOrCreate(['function_name' => $function_name, 'function_date' => $function_date,'created_by_user_id' => $UserDetail->id]);
-
             $destinationPath = public_path().'/'.'Images/FunctionImages';
+            if( file_exists( $destinationPath.'/'.$function_detail->function_image ) ) {
+                unlink($destinationPath.'/'.$function_detail->function_image);
+            }
             $fileName = time().'_'.$function_image->getClientOriginalName();
             $function_image->move($destinationPath,$fileName);
             $function_detail->function_image = $fileName;
             $function_detail->save();
+            $function_detail->function_image = url('public/Images/FunctionImages').'/'.$function_detail->function_image;
             $response = [
                 'message' => 'success',
+                'response' => $function_detail
             ];
             return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
         }
-    }*/
+    }
+
+    public function feeds(Request $request){
+        $userDetail = $request->userDetail;
+        $key = $request->key;
+        $video = $request->file('video');
+        $image = $request->image;
+        $wedding_id = $request->wedding_id;
+
+        $validations = [
+            'key' => 'required',
+            'video' => 'required_if:key,==,1',
+            'image' => 'required_if:key,==,2',
+            'wedding_id' => 'required',
+        ];
+        $messages = [
+            'video.required_if' => 'video field is required',
+            'image.required_if' => 'image field is required',
+            'wedding_id.required' => 'wedding_id field is required',
+        ];
+        $validator = Validator::make($request->all(),$validations,$messages);
+        if($validator->fails()){
+            $response = [
+                'message' => $validator->errors($validator)->first()
+            ];
+            return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+        }else{
+
+            
+
+            if($key == 1){
+                $path = public_path().'/'.'Images/FunctionFeeds/Video';
+                $video_name = str_replace(" ","_",time().'_'.$video->getClientOriginalName());
+                $video->move($path,$video_name);
+
+                $Feeds = Feeds::firstOrCreate(['wedding_id' => $wedding_id ,'user_id' => $userDetail->id ,'attachment' => $video_name]);
+                $Feeds->attachment = $video_name;
+                $Feeds->attachment_type = $key;
+                $Feeds->save();
+                $response = [
+                    'messages' => 'Video_uploaded',
+                    'response' => $Feeds,
+                    'key' => '1',
+                    'url' => url('public/Images/FunctionFeeds/Video').'/'.$video_name
+                ];
+                return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+            }
+            if($key == 2){
+                $path = public_path().'/'.'Images/FunctionFeeds/Images';
+                $image_name = str_replace(" ","_",time().'_'.$image->getClientOriginalName());
+                $image->move($path,$image_name);
+                $Feeds = Feeds::firstOrCreate(['wedding_id' => $wedding_id ,'user_id' => $userDetail->id ,'attachment' => $image_name]);
+                $Feeds->attachment = $image_name;
+                $Feeds->attachment_type = $key;
+                $Feeds->save();
+                $response = [
+                    'messages' => 'Image_uploaded',
+                    'response' => $Feeds,
+                    'key' => '2',
+                    'url' => url('public/Images/FunctionFeeds/Images').'/'.$image_name,
+                ];
+                return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+            }
+        }
+
+    }
 }
