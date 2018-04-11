@@ -65,7 +65,12 @@ class User extends Model
 
 	public function getProfileImageAttribute($value){
 		if(empty($value)){
-			return "";
+			$response = [
+				'big' => "",
+				'small' => "",
+				'thumbnail' => "",
+			];
+			return json_decode(json_encode($response),True);
 		}else{
 			$response = [
 				'big' => url('/public/Images').'/big'.$value,

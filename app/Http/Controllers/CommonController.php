@@ -397,8 +397,8 @@ class CommonController extends Controller
 
     public function sendOtp($mobile,$otp) {
         try{
-            $sid = 'AC6ceef3619be02e48da4aba2512cc426b';
-            $token = 'eeaa38187028b4a0a9c4f4e105162b6e';
+            $sid = 'ACb833d0dd2e4ed510d90163fb1f0c2785';
+            $token = '2f8bdff0e9d85af075c24c7e410e1241';
 
 
 
@@ -408,12 +408,12 @@ class CommonController extends Controller
 
             $client = new Client($sid, $token);
             $number = $client->lookups
-                // ->phoneNumbers("+17032151231")
-                ->phoneNumbers("+14154291712")
+                ->phoneNumbers("+17032151231")
+                // ->phoneNumbers("+14154291712")
                 ->fetch(array("type" => "carrier"));
             $client->messages->create(
                 implode('',explode('-', $mobile)), array(
-                    'from' => '+14154291712',
+                    'from' => '+17032151231',
                     'body' => 'Wed Mojo: please enter this code to verify :'.$otp
                 )
             );
@@ -778,12 +778,13 @@ class CommonController extends Controller
                 ];
                 return Response::json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
             } else {
+                // dd($request->all());
                 if(isset($_FILES['profile_image']['tmp_name'])){
-                    /*dd($USER->profile_image);
-                    dd( $USER->profile_image['big'] );
-                    dd( explode( '/', $USER->profile_image['big'] ) );
-                    */
-                    if( $USER->profile_image ){
+                    // dd($USER->profile_image);
+                    // dd( $USER->profile_image['big'] );
+                    // dd( explode( '/', $USER->profile_image['big'] ) );
+                    
+                    /*if( $USER->profile_image ){
                         $big = explode('/', $USER->profile_image['big']);
                         $small = explode('/', $USER->profile_image['small']);
                         $thumbnail = explode('/', $USER->profile_image['thumbnail']);
@@ -796,7 +797,7 @@ class CommonController extends Controller
                         if( file_exists(public_path().'/Images/'.end($thumbnail)) ) {
                             unlink(public_path().'/Images/'.end($thumbnail));
                         }
-                    }
+                    }*/
                     $uploadedfile = $_FILES['profile_image']['tmp_name'];
                     $fileName1 = substr($this->uploadImage($profile_image,$uploadedfile,$destinationPathOfProfile),9); 
                     $USER->profile_image = $fileName1;
