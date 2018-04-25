@@ -25,17 +25,30 @@ Route::post('resendOtp','CommonController@resendOtp');
 Route::post('forgetPassword','CommonController@forgetPassword');
 Route::post('changeMobileNumber','CommonController@changeMobileNumber');
 
-
-
-Route::group(['middleware'=>['ApiAuthentication']],function(){
+Route::middleware('ApiAuthentication')->group(function(){
 	Route::post('logout','CommonController@logout');
 	Route::post('update_profile','CommonController@update_profile');
-	Route::match(['post','get'],'setup_wedding','CommonController@setup_wedding');
-	Route::post('create_host','CommonController@create_host');
-	Route::post('create_function','CommonController@create_function');
 	Route::post('change_password','CommonController@change_password');
-	Route::post('edit_host','CommonController@edit_host');
-	Route::post('delete_host','CommonController@delete_host');
-	Route::match(['get','post'],'get_host','CommonController@get_host');
-	Route::match(['get','post'],'feeds','CommonController@feeds');
+
+	// FunctionController
+		Route::post('create_function','FunctionController@create_function');
+		Route::get('get_function','FunctionController@get_function');
+	// END
+
+	// WeddingController
+		Route::match(['post','get'],'setup_wedding','WeddingController@setup_wedding');
+	// END
+
+	//HostContoller
+		Route::post('create_host','HostController@create_host');
+		Route::post('edit_host','HostController@edit_host');
+		Route::post('delete_host','HostController@delete_host');
+		Route::match(['get','post'],'get_host','HostController@get_host');
+	//END
+
+	// FeedController
+		Route::match(['post'],'feeds','FeedController@feeds');
+		Route::match(['post'],'get_feeds_by_wedding','FeedController@get_feeds_by_wedding');
+		Route::match(['post'],'update_feed','FeedController@update_feed');
+	// END
 });
