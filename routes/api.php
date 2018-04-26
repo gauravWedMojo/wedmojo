@@ -26,13 +26,17 @@ Route::post('forgetPassword','CommonController@forgetPassword');
 Route::post('changeMobileNumber','CommonController@changeMobileNumber');
 
 Route::middleware('ApiAuthentication')->group(function(){
-	Route::post('logout','CommonController@logout');
-	Route::post('update_profile','CommonController@update_profile');
-	Route::post('change_password','CommonController@change_password');
+
+	// CommonController
+		Route::post('logout','CommonController@logout');
+		Route::post('update_profile','CommonController@update_profile');
+		Route::post('change_password','CommonController@change_password');
+	// END
 
 	// FunctionController
 		Route::post('create_function','FunctionController@create_function');
 		Route::get('get_function','FunctionController@get_function');
+		Route::post('edit_function','FunctionController@edit_function');
 	// END
 
 	// WeddingController
@@ -50,5 +54,9 @@ Route::middleware('ApiAuthentication')->group(function(){
 		Route::match(['post'],'feeds','FeedController@feeds');
 		Route::match(['post'],'get_feeds_by_wedding','FeedController@get_feeds_by_wedding');
 		Route::match(['post'],'update_feed','FeedController@update_feed');
+	// END
+
+	// ContactController
+		Route::match(['post'],'sync_contacts','ContactController@sync_contacts');
 	// END
 });
