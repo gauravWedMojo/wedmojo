@@ -368,12 +368,9 @@ class CommonController extends Controller
         try{
             $sid = 'ACb833d0dd2e4ed510d90163fb1f0c2785';
             $token = '2f8bdff0e9d85af075c24c7e410e1241';
-            /*$sid = 'ACb833d0dd2e4ed510d90163fb1f0c2785';   //'AC6ceef3619be02e48da4aba2512cc426b';
-            $token = '2f8bdff0e9d85af075c24c7e410e1241';    //'eeaa38187028b4a0a9c4f4e105162b6e';*/
             $client = new Client($sid, $token);
             $number = $client->lookups
                 ->phoneNumbers("+17032151231")
-                // ->phoneNumbers("+14154291712")
                 ->fetch(array("type" => "carrier"));
             $client->messages->create(
                 implode('',explode('-', $mobile)), array(

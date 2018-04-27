@@ -11,11 +11,12 @@ use Exception;
 use \App\Models\Feeds;
 use \App\Models\Attachment;
 use \App\Models\Wedding;
+use \App\Models\FeedReport;
 
 class FeedController extends Controller
 {
 
-   public function feeds(Request $request){
+   	public function feeds(Request $request){
 		$userDetail = $request->userDetail;
 		$key = $request->key;
 		$video = $request->file('video');
@@ -68,28 +69,28 @@ class FeedController extends Controller
 				];
 				return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
 			}
-      	if($key == 2){
-	      	foreach ($image as $index => $value) {
-					$path = public_path().'/'.'Images/FunctionFeeds/Images';
-					$image_name = str_replace(" ","_",time().$index.'_'.$image[$index]->getClientOriginalName());
-					$image[$index]->move($path,$image_name);
-					$Attachment = Attachment::firstOrCreate([
-						'feed_id' => $Feeds, 
-						'attachment' => $image_name , 
-						'attachment_type' => $key ,
-					]);
-				}
-				$Feeds = Feeds::find($Feeds);
-				$Feeds->attachment;
-				foreach ($Feeds->attachment as $key => $value) {
-					$value->attachment = url('public/Images/FunctionFeeds/Images').'/'.$value->attachment;
-				}
-				$response = [
-				  'messages' => 'Image_uploaded',
-				  'response' => $Feeds,
-				];
-				return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
-      	}
+	      	if($key == 2){
+		      	foreach ($image as $index => $value) {
+						$path = public_path().'/'.'Images/FunctionFeeds/Images';
+						$image_name = str_replace(" ","_",time().$index.'_'.$image[$index]->getClientOriginalName());
+						$image[$index]->move($path,$image_name);
+						$Attachment = Attachment::firstOrCreate([
+							'feed_id' => $Feeds, 
+							'attachment' => $image_name , 
+							'attachment_type' => $key ,
+						]);
+					}
+					$Feeds = Feeds::find($Feeds);
+					$Feeds->attachment;
+					foreach ($Feeds->attachment as $key => $value) {
+						$value->attachment = url('public/Images/FunctionFeeds/Images').'/'.$value->attachment;
+					}
+					$response = [
+					  'messages' => 'Image_uploaded',
+					  'response' => $Feeds,
+					];
+					return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+	      	}
 	  	}
 	}
 	
@@ -219,5 +220,103 @@ class FeedController extends Controller
 				return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
       	}
 	  	}
+	}
+
+	public function hide_delete_feed(Request $request){
+		$userDetail = $request->userDetail;
+		$feed_id = $request->feed_id;
+		$key = $request->key;
+		$Feeds = Feeds::find($feed_id);
+		$validations = [
+		   'feed_id' => 'required',
+		   'key' => 'required',
+		];
+		$messages = [
+		   'feed_id.required' => 'feed_id field is required',
+		   'key.required' => 'key field is required',
+		];
+	 	$validator = Validator::make($request->all(),$validations,$messages);
+	  	if($validator->fails()){
+	      $response = [
+	          'message' => $validator->errors($validator)->first()
+	      ];
+	      return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+	  	}else{
+	  		if(count($Feeds)){
+		  		if($userDetail->id == $Feeds->user_id ){
+		  			switch ($key) {
+		  				case '1':
+		  					$Feeds->status = 0;
+		  					$Feeds->hide_by_user_id = $userDetail->id;
+							$Feeds->save();
+							$response = [
+								'message' => __('messages.success.feeds_hide')
+							];
+							return Response::json($response,__('messages.statusCode.ACTION_COMPLETE'));
+		  					break;
+		  				case '2' :
+		  					Attachment::where(['feed_id' => $Feeds->id])->delete();
+		  					Feeds::find($Feeds->id)->delete();
+		  					$response = [
+								'message' => __('messages.success.success')
+							];
+							return response()->json($response,trans('messages.statusCode.ACTION_COMPLETE'));
+		  					break;
+		  			}
+				}else{
+					$response = [
+						'message' => __('messages.invalid.request')
+					];
+					return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+				}
+			}else{
+				$response = [
+					'message' => __('messages.invalid.NOT_FOUND')
+				];
+				return response()->json($response,trans('messages.statusCode.NOT_FOUND'));
+			}
+	  	}
+	}
+
+	public function report_on_feed(Request $request){
+		$userDetail = $request->userDetail;
+		$feed_id = $request->feed_id;
+		$Feeds = Feeds::find($feed_id);
+		$message = $request->message;
+		$validations = [
+		   'feed_id' => 'required',
+		   'message' => 'required',
+		];
+		$messages = [
+		   'feed_id.required' => 'feed_id field is required',
+		   'message.required' => 'message field is required',
+		];
+	 	$validator = Validator::make($request->all(),$validations,$messages);
+	  	if($validator->fails()){
+	      $response = [
+	          'message' => $validator->errors($validator)->first()
+	      ];
+	      return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+	  	}else{
+	  		if(count($Feeds)){
+		  		$FeedReport = FeedReport::firstOrNew(['user_id' => $userDetail->id , 'feed_id' => $feed_id]);
+		  		$FeedReport->message = $message;
+		  		$FeedReport->save();
+		  		$FeedReportCount = FeedReport::where(['feed_id' => $feed_id])->count();
+		  		if($FeedReportCount == 10 ){
+		  			$Feeds->status = 0;
+		  			$Feeds->save();
+		  		}
+		  		$response = [
+		  			'message' => __('messages.success.success')
+		  		];
+		  		return Response::json($response,__('messages.statusCode.ACTION_COMPLETE'));
+		  	}else{
+				$response = [
+					'message' => __('messages.invalid.NOT_FOUND')
+				];
+				return response()->json($response,trans('messages.statusCode.NOT_FOUND'));
+			}
+	  	}	
 	}
 }

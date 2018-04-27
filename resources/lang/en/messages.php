@@ -41,7 +41,9 @@ return [
 		'mother_language_updated' => 'Mother language updated successfully',
 		'Admin_profile_updated' => 'Admin profile updated successfully.',
 		'profile_complete' => 'Profile completed successfully.',
-		'profile_updated' => 'Profile updated successfully.'
+		'profile_updated' => 'Profile updated successfully.',
+		'feeds_hide' => 'Post hide successfully.',
+		'feeds_deleted' => 'Post deleted.',
 	],
 
 	'error' => [
@@ -61,7 +63,7 @@ return [
 		'NO_DATA_FOUND' => '204',
 		'IMAGE_FILE_MISSING' => '422',
 		'SHOW_ERROR_MESSAGE' => '400',
-		'ERROR_IN_EXECUTION' => '404',
+		'NOT_FOUND' => '404',
 		'BAD_REQUEST' => '500'
 	],
 
@@ -80,6 +82,7 @@ return [
 		'credentials' => 'Invalid credentials.',
 		'accessToken' => 'Invalid accessToken.',
 		'OTP' => 'Invalid OTP.',
+		'NOT_FOUND' => 'Not found',
 	],
 
 	'same' => [
