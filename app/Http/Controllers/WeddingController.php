@@ -8,7 +8,7 @@ use \App\Models\Wedding;
 use Illuminate\Support\Facades\Validator;
 use Response;
 use Log;
-
+use Hash;
 class WeddingController extends Controller
 {
 	
@@ -62,7 +62,7 @@ class WeddingController extends Controller
             switch ($UserDetail->user_type) {
                 case 'bride':
                     $user_type = 1;
-                    $Wedding = Wedding::firstOrNew(['bride_id' => $UserDetail->id]);
+                    $Wedding = Wedding::firstOrNew(['bride_contact_number' => $b_contact_number]);
                     $Wedding->bride_first_name = $b_first_name;
                     $Wedding->bride_last_name = $b_last_name;
                     $Wedding->bride_contact_number = $b_contact_number;
@@ -115,6 +115,7 @@ class WeddingController extends Controller
                             'mobile' => explode('-', $g_contact_number)[1],
                             'user_type' => 2]);
                         // dd($groom_creation);
+                        $groom_creation->is_signed_up = 0;
                         $groom_creation->first_name = $g_first_name;
                         $groom_creation->last_name = $g_last_name;
                             // here i have to send this password to groom if he is not registered
@@ -136,7 +137,7 @@ class WeddingController extends Controller
                 case 'groom':
                     $user_type = 2;
                     $groom_id = $UserDetail->id;
-                    $Wedding = Wedding::firstOrNew(['groom_contact_number' => explode('-', $g_contact_number)[1]]);
+                    $Wedding = Wedding::firstOrNew(['groom_contact_number' => $g_contact_number]);
                     $Wedding->groom_id = $groom_id;
                     $Wedding->groom_first_name = $g_first_name;
                     $Wedding->groom_last_name = $g_last_name;
@@ -178,6 +179,7 @@ class WeddingController extends Controller
                     }else{
                         // dd('not');
                         $bride_creation = User::firstOrCreate([ 'country_code' => explode('-', $b_contact_number)[0], 'mobile' => explode('-', $b_contact_number)[1] ,'user_type' => 1]);
+                        $bride_creation->is_signed_up = 0;
                         $bride_creation->first_name = $b_first_name;
                         $bride_creation->last_name = $b_last_name;
                             // here i have to send this password to bride if he is not registered

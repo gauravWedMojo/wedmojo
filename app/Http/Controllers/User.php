@@ -63,19 +63,12 @@ class User extends Model
 			];
 			return json_decode(json_encode($response),True);
 		}else{
-			if(strpos($value, 'facebook.com')){
-				$response = [
-					'big' => $value,
-					'small' => $value,
-					'thumbnail' => $value,
-				];
-			}else{
-				$response = [
-					'big' => url('/public/Images').'/big'.$value,
-					'small' => url('/public/Images').'/small'.$value,
-					'thumbnail' => url('/public/Images').'/thumbnail'.$value,
-				];
-			}
+			dd($value); 
+			$response = [
+				'big' => url('/public/Images').'/big'.$value,
+				'small' => url('/public/Images').'/small'.$value,
+				'thumbnail' => url('/public/Images').'/thumbnail'.$value,
+			];
 			return json_decode(json_encode($response),True);
 		}
 	}

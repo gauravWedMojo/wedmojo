@@ -9,7 +9,7 @@ class Feeds extends Model
     protected $table = 'Feeds';
     protected $fillable = ['wedding_id','user_id',/*'attachment','attachment_type',*/'caption'];
 
-    public function user(){
+    public function feed_created_by_user_detail(){
     	// return $this->hasOne(\App\Models\User::class,'id','user_id');
     	return $this->belongsTo(\App\Models\User::class,'user_id','id');
     }

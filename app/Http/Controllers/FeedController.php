@@ -112,9 +112,19 @@ class FeedController extends Controller
 		}else{
 				$Feeds = Feeds::where(['wedding_id' => $wedding_id])->get();
 				foreach ($Feeds as $key => $value) {
-					$value->user;  //model methos calling from Feed Model
-					$value->wedding; //model methos calling from Feed Model
+					$value->feed_created_by_user_detail;  //model methos calling from Feed Model
+					// $value->wedding; //model methos calling from Feed Model
 					$value->attachment; //model methos calling from Feed Model
+				}
+				// $Feeds['created_by_user_id'] = $Feeds->user_id;
+				// return $Feeds;
+				foreach ($Feeds as $key => $value) {
+					for ($i=0; $i < count($value->attachment); $i++) { 
+						if( $value->attachment[$i]->attachment_type == 1 )
+							$value->attachment[$i]->attachment = url('public/Images/FunctionFeeds/Video').'/'.$value->attachment[$i]->attachment;
+						if( $value->attachment[$i]->attachment_type == 2 )
+							$value->attachment[$i]->attachment = url('public/Images/FunctionFeeds/Images').'/'.$value->attachment[$i]->attachment;
+					}
 				}
 				$response = [
 					'messages' => __('messages.success.success'),
@@ -222,7 +232,7 @@ class FeedController extends Controller
 	  	}
 	}
 
-	public function hide_delete_feed(Request $request){
+	public function delete_feed(Request $request){
 		$userDetail = $request->userDetail;
 		$feed_id = $request->feed_id;
 		$key = $request->key;
@@ -245,7 +255,7 @@ class FeedController extends Controller
 	  		if(count($Feeds)){
 		  		if($userDetail->id == $Feeds->user_id ){
 		  			switch ($key) {
-		  				case '1':
+		  				/*case '1':
 		  					$Feeds->status = 0;
 		  					$Feeds->hide_by_user_id = $userDetail->id;
 							$Feeds->save();
@@ -253,7 +263,7 @@ class FeedController extends Controller
 								'message' => __('messages.success.feeds_hide')
 							];
 							return Response::json($response,__('messages.statusCode.ACTION_COMPLETE'));
-		  					break;
+		  					break;*/
 		  				case '2' :
 		  					Attachment::where(['feed_id' => $Feeds->id])->delete();
 		  					Feeds::find($Feeds->id)->delete();

@@ -27,46 +27,69 @@ class CommonController extends Controller
         $device_token = $request->device_token;
         $device_type = $request->device_type;
         $user_type = $request->user_type;
-        $validations = [
-            'mobile' => 'required|unique:users',
-            'country_code' => 'required',
-            'password' => 'required|min:8',
-            'device_token' => 'required',
-            'device_type' => 'required|numeric',
-            'user_type' => 'required|numeric',
-        ];
-        if($timezone){
-            $this->setTimeZone($timezone);
-        }
+        $data = User::where(['country_code' => $country_code , 'mobile' => $mobile])->first();
 
-        $validator = Validator::make($request->all(),$validations);
-        if($validator->fails()){
-            $response = [
-            'message' => $validator->errors($validator)->first()
+        if(!count($data)){ 
+            $validations = [
+                'mobile' => 'required|unique:users',
+                'country_code' => 'required',
+                'password' => 'required|min:8',
+                'device_token' => 'required',
+                'device_type' => 'required|numeric',
+                'user_type' => 'required|numeric',
             ];
-            return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
-        }else{
-            $user = new \App\User;
-            $user->country_code = $country_code;
-            $user->mobile = $mobile;
-            $user->password = $password;
-            $user->otp = $otp;
-            $user->device_token = $device_token;
-            $user->remember_token = $accessToken;
-            $user->device_type = $device_type;
-            $user->user_type = $user_type;
-            $user->created_at = time();
-            $user->updated_at = time();
-            $user->save();
-            $userData = User::where(['id' => $user->id])->first();
-            $userData['otp_response'] = $this->sendOtp($country_code.$mobile,$otp);
-            $response = [
-                'message' =>  __('messages.success.signup'),
-                'response' => $userData,
+            if($timezone){
+                $this->setTimeZone($timezone);
+            }
+            $validator = Validator::make($request->all(),$validations);
+            if($validator->fails()){
+                $response = [
+                'message' => $validator->errors($validator)->first()
+                ];
+                return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+            }else{
+                $user = new \App\User;
+                $user->country_code = $country_code;
+                $user->mobile = $mobile;
+                $user->password = $password;
+                $user->otp = $otp;
+                $user->device_token = $device_token;
+                $user->remember_token = $accessToken;
+                $user->device_type = $device_type;
+                $user->user_type = $user_type;
+                $user->created_at = time();
+                $user->updated_at = time();
+                $user->save();
+                $userData = User::where(['id' => $user->id])->first();
+                $userData['otp_response'] = $this->sendOtp($country_code.$mobile,$otp);
+                $response = [
+                    'message' =>  __('messages.success.signup'),
+                    'response' => $userData,
 
-            ];
-            Log::info('CommonController----sign_up----'.print_r($response,True));
-            return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+                ];
+                Log::info('CommonController----sign_up----'.print_r($response,True));
+                return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+            }
+        }else{ // if user created passively like by their groom or bride
+            if($data->is_signed_up == 0){
+                $data->password = $password;
+                $data->otp = $otp;
+                $data->is_signed_up = 1;
+                $data->save();
+                $userData = User::where(['id' => $data->id])->first();
+                $userData['otp_response'] = $this->sendOtp($country_code.$mobile,$otp);
+                $response = [
+                    'message' =>  __('messages.success.signup'),
+                    'response' => $userData,
+                ];
+                Log::info('CommonController----sign_up----'.print_r($response,True));
+                return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+            }else{
+                $response = [
+                    'message' =>  __('messages.error.mobile_already_taken'),
+                ];
+                return response()->json($response,__('messages.statusCode.SHOW_ERROR_MESSAGE'));
+            }
         }
     }
 
@@ -95,7 +118,8 @@ class CommonController extends Controller
             'device_token' => 'required',
             'device_type' => 'required|numeric',
             'user_type' => 'required|numeric',
-            // 'mobile' => 'required|unique:users'
+            'mobile' => 'required',
+            'country_code' => 'required',
         ];
         $validator = Validator::make($request->all(),$validations);
         if($validator->fails()){
@@ -105,50 +129,75 @@ class CommonController extends Controller
             return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
         }else{
             $user = User::where(['social_id'=>$social_id,'email'=> $email])->first();
-            // dd($user);
-            if(!$user){
-                $validations = [
-                    'email' => 'required|email|unique:users',
-                    'social_id' => 'required|unique:users',
-                    'mobile' => 'required|unique:users',
-                    'first_name' => 'required',
-                    'last_name' => 'required',
-                    'profile_image' => 'required',
-                ];
-                $validator = Validator::make($request->all(),$validations);
-                if($validator->fails()){
-                    $response = [
-                    'message' => $validator->errors($validator)->first()
+            $user_with_country_mobile = User::where(['country_code' => $country_code , 'mobile' => $mobile])->first();
+            if(!$user){ // if user not exit by social_id or email
+                if(!$user_with_country_mobile){
+                    $validations = [
+                        'email' => 'required|email|unique:users',
+                        'social_id' => 'required|unique:users',
+                        'mobile' => 'required|unique:users',
+                        'first_name' => 'required',
+                        'last_name' => 'required',
+                        'profile_image' => 'required',
                     ];
-                    return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
-                }else{
-                    $User = new User;
-                    $User->country_code = $country_code;
-                    $User->mobile = $mobile;
-                    $User->email = $email;
-                    $User->social_id = $social_id;
-                    $User->device_token = $device_token;
-                    $User->device_type = $device_type;
-                    $User->user_type = $user_type;
-                    $User->remember_token = $accessToken;
-                    $User->first_name = $first_name;
-                    $User->last_name = $last_name;
-                    $User->profile_image = $profile_image;
-                    $User->complete_profile_status = 1;
-                    $User->created_at = time();
-                    $User->updated_at = time();
-                    $User->otp = $otp;
-                    $User->otp_verified = 0;
-                    $User->save();
-                    $userData = User::where(['id' => $User->id])->first();
-                    $userData['otp_response'] = $this->sendOtp($country_code.$mobile,$otp);
-                    if($User){
+                    $validator = Validator::make($request->all(),$validations);
+                    if($validator->fails()){
                         $response = [
-                            'message' => __('messages.success.signup'),
-                            'response' => $userData
+                        'message' => $validator->errors($validator)->first()
                         ];
-                        return Response::json($response,__('messages.statusCode.ACTION_COMPLETE'));
+                        return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+                    }else{
+                        $User = new User;
+                        $User->country_code = $country_code;
+                        $User->mobile = $mobile;
+                        $User->email = $email;
+                        $User->social_id = $social_id;
+                        $User->device_token = $device_token;
+                        $User->device_type = $device_type;
+                        $User->user_type = $user_type;
+                        $User->remember_token = $accessToken;
+                        $User->first_name = $first_name;
+                        $User->last_name = $last_name;
+                        $User->profile_image = $profile_image;
+                        $User->complete_profile_status = 1;
+                        $User->created_at = time();
+                        $User->updated_at = time();
+                        $User->otp = $otp;
+                        $User->otp_verified = 0;
+                        $User->save();
+                        $userData = User::where(['id' => $User->id])->first();
+                        $userData['otp_response'] = $this->sendOtp($country_code.$mobile,$otp);
+                        if($User){
+                            $response = [
+                                'message' => __('messages.success.signup'),
+                                'response' => $userData
+                            ];
+                            return Response::json($response,__('messages.statusCode.ACTION_COMPLETE'));
+                        }
                     }
+                }else{
+                    $user_with_country_mobile->email = $email;
+                    $user_with_country_mobile->social_id = $social_id;
+                    $user_with_country_mobile->device_token = $device_token;
+                    $user_with_country_mobile->device_type = $device_type;
+                    $user_with_country_mobile->user_type = $user_with_country_mobile_type;
+                    $user_with_country_mobile->remember_token = $accessToken;
+                    $user_with_country_mobile->first_name = $first_name;
+                    $user_with_country_mobile->last_name = $last_name;
+                    $user_with_country_mobile->profile_image = $profile_image;
+                    $user_with_country_mobile->complete_profile_status = 1;
+                    $user_with_country_mobile->updated_at = time();
+                    $user_with_country_mobile->otp = $otp;
+                    $user_with_country_mobile->otp_verified = 0;
+                    $user_with_country_mobile->save();
+                    $userData = User::where(['id' => $user_with_country_mobile->id])->first();
+                    $userData['otp_response'] = $this->sendOtp($country_code.$mobile,$otp);
+                    $response = [
+                    'message' => __('messages.success.signup'),
+                        'response' => $userData
+                    ];
+                    Log::info('CommonController----social_sign_up_and_login----'.print_r($response,True));
+                    return Response::json($response,__('messages.statusCode.ACTION_COMPLETE'));
                 }
             }else{
                 $Obj = new User;
@@ -263,7 +312,7 @@ class CommonController extends Controller
             'password' => 'required|min:8',
             'device_token' => 'required',
             'device_type' => 'required|numeric',
-            'user_type' => 'required'
+            // 'user_type' => 'required'
         ];
         if($timezone){
             $this->setTimeZone($timezone);
@@ -294,8 +343,8 @@ class CommonController extends Controller
                     }
                     // return $user_type;
                     // return $userDetail->user_type;
-                    if($userDetail->user_type == $user_type){
-                        // dd( Hash::check($password,$userDetail->password) );
+
+                    // if($userDetail->user_type == $user_type){
                         if(Hash::check($password,$userDetail->password)){
                             $User = new User;
                             $UserDetail = $User::find($userDetail->id);
@@ -321,12 +370,12 @@ class CommonController extends Controller
                             ];
                             return response()->json($response,__('messages.statusCode.INVALID_CREDENTIAL'));
                         }
-                    }else{
+                    /*}else{
                         $response = [
                             'message' =>  __('messages.invalid.detail')
                         ];
                         return response()->json($response,__('messages.statusCode.INVALID_CREDENTIAL'));
-                    }
+                    }*/
             }else{
                 $response = [
                     'message' =>  __('messages.invalid.detail')

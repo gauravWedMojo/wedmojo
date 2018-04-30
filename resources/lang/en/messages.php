@@ -49,7 +49,8 @@ return [
 	'error' => [
 		'insert' => 'Error in record creation.',
 		'incorrect_old_password' => 'Old password is incorrect.',
-		'incorrect_old_passcode' => 'Old passcode is incorrect.'
+		'incorrect_old_passcode' => 'Old passcode is incorrect.',
+		'mobile_already_taken' => 'Mobile number already exist.',
 	],
 
 
