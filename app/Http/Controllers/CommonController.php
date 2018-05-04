@@ -698,6 +698,7 @@ class CommonController extends Controller
         if(!empty($locale)){
             \App::setLocale($locale);
             $validations = [
+                'country_code'       => 'required',
                 'mobile'       => 'required',
             ];
             $validator = Validator::make($request->all(),$validations);
@@ -725,11 +726,12 @@ class CommonController extends Controller
                         } else {
                                 $User = new \App\User;
                                 $UserDetail = $User::find($userDetail->id);
+                                $UserDetail->country_code = $country_code;
                                 $UserDetail->mobile = $mobile;
                                 $UserDetail->otp = $otp;
                                 $UserDetail->otp_verified = '0';
                                 $UserDetail->save();
-                                $this->sendOtp($mobile, $otp);
+                                $this->sendOtp($country_code.$mobile, $otp);
                                 $response = [
                                     'message' => __('messages.success.success'),
                                     'response' => User::where(['id' => $userDetail->id])->first()

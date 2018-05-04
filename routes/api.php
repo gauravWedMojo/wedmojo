@@ -69,6 +69,7 @@ Route::middleware('ApiAuthentication')->group(function(){
 		Route::match(['post'],'update_feed','FeedController@update_feed');
 		Route::match(['post'],'delete_feed','FeedController@delete_feed');
 		Route::match(['post'],'report_on_feed','FeedController@report_on_feed');
+		Route::match(['post'],'hide_feeds','FeedController@hide_feeds');
 	// END
 
 	// ContactController

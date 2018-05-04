@@ -40,8 +40,10 @@ class FunctionController extends Controller
             $function_detail->function_image = $fileName;
             $function_detail->function_location = $function_location;
             $function_detail->save();
-            foreach ($function_invite_contacts as $key => $value) {
-                InviteContacts::firstOrCreate(['contact_id' => $value , 'function_id' => $function_detail->id]);
+            if(count($function_invite_contacts)){
+                foreach ($function_invite_contacts as $key => $value) {
+                    InviteContacts::firstOrCreate(['contact_id' => $value , 'function_id' => $function_detail->id]);
+                }
             }
             $function_detail->function_image = url('public/Images/FunctionImages').'/'.$function_detail->function_image;
 

@@ -11,6 +11,7 @@ use Exception;
 use \App\Models\Feeds;
 use \App\Models\Attachment;
 use \App\Models\Wedding;
+use \App\Models\HiddenFeed;
 use \App\Models\FeedReport;
 
 class FeedController extends Controller
@@ -59,8 +60,10 @@ class FeedController extends Controller
 					]);
 				}
 				$Feeds = Feeds::find($Feeds);
+				$Feeds->feed_created_by_user_detail;  //model methos calling from Feed Model
 				$Feeds->attachment;
 				foreach ($Feeds->attachment as $key => $value) {
+					$value->feed_created_by_user_detail;  //model methos calling from Feed Model
 					$value->attachment = url('public/Images/FunctionFeeds/Video').'/'.$value->attachment;
 				}
 				$response = [
@@ -71,25 +74,27 @@ class FeedController extends Controller
 			}
 	      	if($key == 2){
 		      	foreach ($image as $index => $value) {
-						$path = public_path().'/'.'Images/FunctionFeeds/Images';
-						$image_name = str_replace(" ","_",time().$index.'_'.$image[$index]->getClientOriginalName());
-						$image[$index]->move($path,$image_name);
-						$Attachment = Attachment::firstOrCreate([
-							'feed_id' => $Feeds, 
-							'attachment' => $image_name , 
-							'attachment_type' => $key ,
-						]);
-					}
-					$Feeds = Feeds::find($Feeds);
-					$Feeds->attachment;
-					foreach ($Feeds->attachment as $key => $value) {
-						$value->attachment = url('public/Images/FunctionFeeds/Images').'/'.$value->attachment;
-					}
-					$response = [
-					  'messages' => 'Image_uploaded',
-					  'response' => $Feeds,
-					];
-					return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+					$path = public_path().'/'.'Images/FunctionFeeds/Images';
+					$image_name = str_replace(" ","_",time().$index.'_'.$image[$index]->getClientOriginalName());
+					$image[$index]->move($path,$image_name);
+					$Attachment = Attachment::firstOrCreate([
+						'feed_id' => $Feeds, 
+						'attachment' => $image_name , 
+						'attachment_type' => $key ,
+					]);
+				}
+				$Feeds = Feeds::find($Feeds);
+				$Feeds->feed_created_by_user_detail;  //model methos calling from Feed Model
+				$Feeds->attachment;
+				foreach ($Feeds->attachment as $key => $value) {
+					$value->attachment = url('public/Images/FunctionFeeds/Images').'/'.$value->attachment;
+				}
+
+				$response = [
+				  'messages' => 'Image_uploaded',
+				  'response' => $Feeds->toArray(),
+				];
+				return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
 	      	}
 	  	}
 	}
@@ -110,14 +115,17 @@ class FeedController extends Controller
 		   ];
 		   return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
 		}else{
-				$Feeds = Feeds::where(['wedding_id' => $wedding_id])->get();
+				$HiddenFeed = HiddenFeed::where(['user_id' => $userDetail->id])->pluck('feed_id');
+				$Feeds = Feeds::where(['wedding_id' => $wedding_id])
+					->whereNotIn('id',$HiddenFeed)
+					->orderBy('id','desc')
+					->get();
+				// return $Feeds;
 				foreach ($Feeds as $key => $value) {
 					$value->feed_created_by_user_detail;  //model methos calling from Feed Model
 					// $value->wedding; //model methos calling from Feed Model
 					$value->attachment; //model methos calling from Feed Model
 				}
-				// $Feeds['created_by_user_id'] = $Feeds->user_id;
-				// return $Feeds;
 				foreach ($Feeds as $key => $value) {
 					for ($i=0; $i < count($value->attachment); $i++) { 
 						if( $value->attachment[$i]->attachment_type == 1 )
@@ -328,5 +336,29 @@ class FeedController extends Controller
 				return response()->json($response,trans('messages.statusCode.NOT_FOUND'));
 			}
 	  	}	
+	}
+
+	public function hide_feeds(Request $request){
+		$userDetail = $request->userDetail;
+		$feed_id = $request->feed_id;
+		$validations = [
+		   'feed_id' => 'required',
+		];
+		$messages = [
+		   'feed_id.required' => 'feed_id field is required',
+		];
+	 	$validator = Validator::make($request->all(),$validations,$messages);
+	  	if($validator->fails()){
+	      $response = [
+	          'message' => $validator->errors($validator)->first()
+	      ];
+	      return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+	  	}
+		$HiddenFeed = HiddenFeed::firstOrCreate(['feed_id' => $feed_id , 'user_id' => $userDetail->id]);
+		$response = [
+			'messages' => __('messages.success.success'),
+			'response' => $HiddenFeed
+		];
+		return Response::json($response,__('messages.statusCode.ACTION_COMPLETE'));
 	}
 }

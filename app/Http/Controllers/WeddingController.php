@@ -161,6 +161,7 @@ class WeddingController extends Controller
                     $Wedding->bride_image = $b_filename;
 
                     $brideDetail = User::where(['mobile' => explode('-', $b_contact_number)[1]])->first();
+                    // dd($brideDetail->toArray());
                     if($brideDetail){
                         // dd($brideDetail->user_type);
                         // dd('exist');
@@ -186,7 +187,7 @@ class WeddingController extends Controller
                         $bride_creation->password = Hash::make(11111111); 
                         $bride_creation->wedding_status = 1;
                         $bride_creation->save();    
-                        $Wedding->groom_id = $bride_creation->id;
+                        $Wedding->bride_id = $bride_creation->id;
                     }
                     $UserDetail->wedding_status = 1;
                     $UserDetail->save();
@@ -209,10 +210,12 @@ class WeddingController extends Controller
             }
         }
         if($request->method() == 'GET'){
+            // dd($UserDetail->user_type);
             if($UserDetail->user_type == 'bride'){
                 $data = Wedding::where([ 'bride_id' => $UserDetail->id ])->first();
             }
             if($UserDetail->user_type == 'groom'){
+                // dd($UserDetail->id);
                 $data = Wedding::where([ 'groom_id' => $UserDetail->id ])->first();
             }
             

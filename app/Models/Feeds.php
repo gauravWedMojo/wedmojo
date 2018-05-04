@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Feeds extends Model
 {
-    protected $table = 'Feeds';
+    protected $table = 'feeds';
     protected $fillable = ['wedding_id','user_id',/*'attachment','attachment_type',*/'caption'];
 
     public function feed_created_by_user_detail(){
