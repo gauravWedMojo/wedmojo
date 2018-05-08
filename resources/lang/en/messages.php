@@ -86,6 +86,11 @@ return [
 		'NOT_FOUND' => 'Not found',
 	],
 
+	'adminMessages' => [
+		'invalid' => 'Invalid credentials',
+
+	],
+
 	'same' => [
 		'same_number' => 'You have entered the same number.',
 		'country_code' => 'Same country code as last.'
