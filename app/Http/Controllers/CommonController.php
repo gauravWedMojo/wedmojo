@@ -16,6 +16,28 @@ use Illuminate\Validation\Rule;
 class CommonController extends Controller
 {
     
+    public function checkUser(Request $request){
+        $social_id = $request->social_id;
+        $email = $request->email;
+         $validations = [
+            'social_id' => 'required',
+            'email' => 'required|email:unique',
+        ];
+        $validator = Validator::make($request->all(),$validations);
+        if($validator->fails()){
+            $response = [
+            'message' => $validator->errors($validator)->first()
+            ];
+            return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
+        }
+        $userData = User::where(['social_id' => $social_id , 'email' => $email])->first();
+        $response = [
+            'messages' => __('messages.success.success'),
+            'response' => $userData
+        ];
+        return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+    }
+
     public function sign_up(Request $request){
         Log::info('CommonController----sign_up----'.print_r($request->all(),True));
         $timezone = $request->header('timezone');

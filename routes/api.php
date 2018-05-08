@@ -31,15 +31,16 @@ Route::post('truncate',function(Request $request){
 		DB::table('wedding_detail')->truncate();
 		DB::table('function')->truncate();
 		DB::table('invites')->truncate();
-		DB::table('Feeds')->truncate();
+		DB::table('feeds')->truncate();
 		DB::table('report_feeds')->truncate();
 		DB::table('attachments')->truncate();
 		DB::table('contacts')->truncate();
+		DB::table('hidden_feeds')->truncate();
 	}
 });
 
+Route::post('checkUser','CommonController@checkUser');
 Route::middleware('ApiAuthentication')->group(function(){
-
 	// CommonController
 		Route::post('logout','CommonController@logout');
 		Route::post('update_profile','CommonController@update_profile');
