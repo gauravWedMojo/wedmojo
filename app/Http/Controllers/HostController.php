@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Validator;
 use Log;
 use Response;
 use \App\Models\User;
+use Illuminate\Validation\Rule;
 
 class HostController extends Controller
 {

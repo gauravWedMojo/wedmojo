@@ -28,7 +28,7 @@ class CommonController extends Controller
         $device_type = $request->device_type;
         $user_type = $request->user_type;
         $data = User::where(['country_code' => $country_code , 'mobile' => $mobile])->first();
-
+        // return $data;
         if(!count($data)){ 
             $validations = [
                 'mobile' => 'required|unique:users',
@@ -71,9 +71,11 @@ class CommonController extends Controller
                 return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
             }
         }else{ // if user created passively like by their groom or bride
+            // dd($data->is_signed_up == 0);
             if($data->is_signed_up == 0){
                 $data->password = $password;
                 $data->otp = $otp;
+                $data->remember_token = $accessToken;
                 $data->is_signed_up = 1;
                 $data->save();
                 $userData = User::where(['id' => $data->id])->first();

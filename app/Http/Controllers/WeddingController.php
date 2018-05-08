@@ -63,6 +63,7 @@ class WeddingController extends Controller
                 case 'bride':
                     $user_type = 1;
                     $Wedding = Wedding::firstOrNew(['bride_contact_number' => $b_contact_number]);
+                    $Wedding->bride_id = $UserDetail->id;
                     $Wedding->bride_first_name = $b_first_name;
                     $Wedding->bride_last_name = $b_last_name;
                     $Wedding->bride_contact_number = $b_contact_number;
@@ -210,7 +211,7 @@ class WeddingController extends Controller
             }
         }
         if($request->method() == 'GET'){
-            // dd($UserDetail->user_type);
+            // dd($UserDetail);
             if($UserDetail->user_type == 'bride'){
                 $data = Wedding::where([ 'bride_id' => $UserDetail->id ])->first();
             }
