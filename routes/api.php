@@ -74,6 +74,7 @@ Route::middleware('ApiAuthentication')->group(function(){
 	// END
 
 	// ContactController
-		Route::match(['post'],'sync_contacts','ContactController@sync_contacts');
+		Route::post('sync_contacts','ContactController@sync_contacts');
+		Route::get('sync_contacts/{page?}','ContactController@sync_contacts');
 	// END
 });

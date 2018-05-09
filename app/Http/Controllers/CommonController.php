@@ -26,7 +26,7 @@ class CommonController extends Controller
         $validator = Validator::make($request->all(),$validations);
         if($validator->fails()){
             $response = [
-            'message' => $validator->errors($validator)->first()
+                'message' => $validator->errors($validator)->first()
             ];
             return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
         }

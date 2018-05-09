@@ -13,10 +13,9 @@ class RedirectIfNotAdmin
      * @param  \Closure  $next
      * @return mixed
      */
-    public function handle($request, Closure $next , $guard = 'admin')
-    {
-        if (Auth::guard($guard)->check()) {
-            return redirect('/admin/dashboard');
+    public function handle($request, Closure $next , $guard = 'admin'){
+        if (!Auth::guard($guard)->check()) {
+            return redirect('/admin');
         }
         return $next($request);
     }

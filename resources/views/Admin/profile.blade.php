@@ -1,4 +1,4 @@
-      <?php include 'header.php';?>
+@include('Admin/header')
       <div class="profilePage"></div>
       <div class="layout-content">
         <div class="profile">
@@ -7,12 +7,20 @@
               <div class="profile-container">
                 <div class="profile-card">
                   <div class="profile-avetar">
-                    <img class="profile-avetar-img" width="128" height="128" src="img/0180441436.jpg" alt="Teddy Wilson">
+                    @if(!Auth::guard('admin')->user()->profile)
+                      <img class="profile-avetar-img" width="128" height="128" src="{{asset('Admin/img/0180441436.jpg')}}" alt="{{Auth::guard('admin')->user()->name}}">
+                    @else
+                      @if(App::environment() == 'local')
+                        <img class="profile-avetar-img" width="128" height="128" src="{{asset('Admin/img')}}/{{Auth::guard('admin')->user()->profile}}" alt="{{Auth::guard('admin')->user()->name}}">
+                      @else
+                        <img class="profile-avetar-img" width="128" height="128" src="{{url('public/Admin/img')}}/{{Auth::guard('admin')->user()->profile}}" alt="{{Auth::guard('admin')->user()->name}}">
+                      @endif
+                    @endif
                   </div>
                   <div class="profile-overview">
-                    <h1 class="profile-name">TeddyWilson</h1>
+                    <h1 class="profile-name">{{Auth::guard('admin')->user()->name}}</h1>
                
-                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Nam quae, quam reprehenderit blanditiis. Necessitatibus et vitae</p>
+                    <p>{{Auth::guard('admin')->user()->about_me}}</p>
                   </div>
                  
                 </div>
@@ -54,7 +62,7 @@
                                 <div class="media-body">
                                   <h5 class="m-y-0">Email</h5>
                                   <p>
-                                    <small>replied@gmail.com</small>
+                                    <small>{{Auth::guard('admin')->user()->email}}</small>
                                   </p>
                                 </div>
                               </div>
@@ -74,7 +82,7 @@
                                 <div class="media-body">
                                   <h5 class="m-y-0">Phone</h5>
                                   <p>
-                                    <small>+91365463777</small>
+                                    <small>{{Auth::guard('admin')->user()->mobile}}</small>
                                   </p>
                                 </div>
                               </div>
@@ -115,7 +123,7 @@
                                 <div class="media-body">
                                   <h5 class="m-y-0">Address</h5>
                                   <p>
-                                    <small>replied@gmail.com</small>
+                                    <small>{{Auth::guard('admin')->user()->address}}</small>
                                   </p>
                                 </div>
                               </div>
@@ -135,7 +143,7 @@
                                 <div class="media-body">
                                   <h5 class="m-y-0">Location</h5>
                                   <p>
-                                    <small>USA</small>
+                                    <small>{{Auth::guard('admin')->user()->location}}</small>
                                   </p>
                                 </div>
                               </div>
@@ -155,10 +163,10 @@
             </div>
             <div class="clearfix"></div>
             <div class="col-md-12">
-             <a href="edit-profile.php" class="">       
+             <a href="{{url('admin/edit-profile')}}" class="">       
               <button class="btn btn-primary btn-sm pull-right" type="button">Edit profile</button> 
              </a>
-             <a href="changePassword.php" >       
+             <a href="{{url('admin/change-password')}}" >       
                 <button class="btn btn-primary btn-sm pull-right margin-right-5" type="button">Change Password</button> 
               </a>
                   </div>
@@ -167,5 +175,4 @@
       </div>
       
     </div>
-      <?php include 'footer.php';?>
-    
+@include('Admin/footer')

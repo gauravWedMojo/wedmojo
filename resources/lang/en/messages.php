@@ -88,6 +88,11 @@ return [
 
 	'adminMessages' => [
 		'invalid' => 'Invalid credentials',
+		'invalid_email' => 'Email not registered with us.',
+		'resetLinkSend' => 'Password reset link sent at your registered email.',
+		'password_reset_success' => 'Password reset successful.',
+		'invalid_reset_token' => 'Invalid password reset token.',
+		'password_changed' => 'Password changed successfully.'
 
 	],
 

@@ -12,53 +12,73 @@
      <script src="{{asset('Admin/js/demo.min.js')}}"></script>
    
     <script type="text/javascript">
-    $(window).load(function(){
+      $(window).load(function(){
 
-      // For Driver Page
-      if ( $('.profilePage').length ) {
-        $('.sidenav-item').removeClass("active");
-        $('.profilePageNav').addClass("active");
-      }
-      if ( $('.dashboardPage').length ) {
-        $('.sidenav-item').removeClass("active");
-        $('.dashboardPageNav').addClass("active");
-      }
-      
-      if ( $('.userListPage').length ) {
-        $('.sidenav-item').removeClass("active");
-        $('.accNav-a').addClass("active");
-        $('.accountNav').addClass("open");
-        $('.accountNav ul').css("display","block");
-      }
-      if ( $('.serviceProviderPage').length ) {
-        $('.sidenav-item').removeClass("active");
-        $('.accNav-b').addClass("active");
-        $('.accountNav').addClass("open");
-        $('.accountNav ul').css("display","block");
-      }
-      if ( $('.verificationPage').length ) {
-        $('.sidenav-item').removeClass("active");
-        $('.verificationNav').addClass("active");
-      }
-     
-    });
-            $(window).scroll(function (){
-                var window_top = $(window).scrollTop();
-                var div_top = $('.tabs-new').position().top;
-                console.log(window_top);
-                console.log(div_top);
-                if (window_top > div_top) {
-                    $('.tabs-new').addClass('stick');
-                    $('.tabs-new').parents('.layout-content-body').removeClass('layout-content-body').addClass('layout-content-body-dummy');
-                } else {
-                    $('.tabs-new').parents('.layout-content-body').removeClass('layout-content-body-dummy').addClass('layout-content-body')
-                }
+        // For Driver Page
+        if ( $('.profilePage').length ) {
+          $('.sidenav-item').removeClass("active");
+          $('.profilePageNav').addClass("active");
+        }
+        if ( $('.dashboardPage').length ) {
+          $('.sidenav-item').removeClass("active");
+          $('.dashboardPageNav').addClass("active");
+        }
+        
+        if ( $('.userListPage').length ) {
+          $('.sidenav-item').removeClass("active");
+          $('.accNav-a').addClass("active");
+          $('.accountNav').addClass("open");
+          $('.accountNav ul').css("display","block");
+        }
+        if ( $('.serviceProviderPage').length ) {
+          $('.sidenav-item').removeClass("active");
+          $('.accNav-b').addClass("active");
+          $('.accountNav').addClass("open");
+          $('.accountNav ul').css("display","block");
+        }
+        if ( $('.verificationPage').length ) {
+          $('.sidenav-item').removeClass("active");
+          $('.verificationNav').addClass("active");
+        }
+      });
+      $(window).scroll(function (){
+          var window_top = $(window).scrollTop();
+          var div_top = $('.tabs-new').position().top;
+          console.log(window_top);
+          console.log(div_top);
+          if (window_top > div_top) {
+              $('.tabs-new').addClass('stick');
+              $('.tabs-new').parents('.layout-content-body').removeClass('layout-content-body').addClass('layout-content-body-dummy');
+          } else {
+              $('.tabs-new').parents('.layout-content-body').removeClass('layout-content-body-dummy').addClass('layout-content-body')
+          }
 
-                if ( window_top < 74 ) {
-                  $('.tabs-new').removeClass('stick');
-                }
+          if ( window_top < 74 ) {
+            $('.tabs-new').removeClass('stick');
+          }
+      });
+
+
+      $(document).ready(function(){
+        $('.ad_old_password').on('blur',function(){
+            console.log($(this).val());
+            var old_password = $(this).val();
+            var request = $.ajax({
+              url : "{{url('check')}}",
+              type : "POST",
+              headers: {'X-CSRF-TOKEN': "{{ csrf_token() }}"},
+              data : {'old_password':old_password},
             });
+            request.done(function(data){
+              console.log(data);
+            });
+            request.fail(function(data){
 
+            });
+        });
+      });
     </script>
-  </body>
+    
+    
+</body>
 </html>

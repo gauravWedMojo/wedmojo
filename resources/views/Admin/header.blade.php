@@ -186,13 +186,25 @@
               </li>
               <li class="dropdown hidden-xs">
                 <button class="navbar-account-btn" data-toggle="dropdown" aria-haspopup="true">
-                  <img class="rounded" width="36" height="36" src="{{asset('Admin/img/0180441436.jpg')}}" alt="Teddy Wilson"> {{Auth::guard('admin')->user()->name}}
+
+                  @if(!Auth::guard('admin')->user()->profile)
+                    <img class="profile-avetar-img" width="36" height="36" src="{{asset('Admin/img/0180441436.jpg')}}" alt="{{Auth::guard('admin')->user()->name}}">
+                  @else
+                    @if(App::environment() == 'local')
+                      <img class="profile-avetar-img" width="36" height="36" src="{{asset('Admin/img')}}/{{Auth::guard('admin')->user()->profile}}" alt="{{Auth::guard('admin')->user()->name}}">
+                    @else
+                      <img class="profile-avetar-img" width="36" height="36" src="{{url('public/Admin/img')}}/{{Auth::guard('admin')->user()->profile}}" alt="{{Auth::guard('admin')->user()->name}}">
+                    @endif
+                  @endif
+                    @if(Auth::guard('admin')->user())
+                      {{Auth::guard('admin')->user()->name}}
+                    @endif
                   <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-right">
                   
                 
-                  <li><a href="index.html">Profile</a></li>
+                  <li><a href="{{url('admin/profile')}}">Profile</a></li>
                   <li><a href="{{url('/admin/logout')}}">Sign out</a></li>
                 </ul>
               </li>
@@ -230,13 +242,13 @@
                 
                 <li class="sidenav-heading">Navigation</li>
                 <li class="sidenav-item dashboardPageNav">
-                  <a href="index.php" aria-haspopup="true">
+                  <a href="{{url('admin/dashboard')}}" aria-haspopup="true">
                     <span class="sidenav-icon icon icon-home"></span>
                     <span class="sidenav-label">Dashboard</span>
                   </a>
                 </li>
                 <li class="sidenav-item profilePageNav">
-                  <a href="profile.php" aria-haspopup="true">
+                  <a href="{{url('admin/profile')}}" aria-haspopup="true">
                     <span class="sidenav-icon icon icon-user"></span>
                     <span class="sidenav-label">Profile</span>
                   </a>

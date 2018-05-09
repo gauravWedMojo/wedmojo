@@ -25,6 +25,7 @@
           <form data-toggle="validator" action="{{url('admin/login_post')}}" method="POST">
             {{csrf_field()}}
             <span style="color:red">{{session('invalid_credentials')}}</span>
+            <span style="color:green">{{session('password_reset_success')}}</span>
             <div class="form-group">
               <label for="email">Email</label>
               <input id="email" class="form-control" type="email" name="email" spellcheck="false" autocomplete="off" data-msg-required="Please enter your email address." required>
@@ -40,7 +41,7 @@
                 <span class="custom-control-label">Keep me signed in</span>
               </label>
               <span aria-hidden="true"> · </span>
-              <a href="forgot-password.php">Forgot password?</a>
+              <a href="{{url('/admin/forget-password')}}">Forgot password?</a>
             </div>
             <button class="btn btn-primary btn-block" type="submit">Sign in</button>
           </form>
