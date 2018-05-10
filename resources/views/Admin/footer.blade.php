@@ -57,24 +57,58 @@
             $('.tabs-new').removeClass('stick');
           }
       });
-
-
       $(document).ready(function(){
-        $('.ad_old_password').on('blur',function(){
-            console.log($(this).val());
-            var old_password = $(this).val();
-            var request = $.ajax({
-              url : "{{url('check')}}",
-              type : "POST",
-              headers: {'X-CSRF-TOKEN': "{{ csrf_token() }}"},
-              data : {'old_password':old_password},
-            });
-            request.done(function(data){
-              console.log(data);
-            });
-            request.fail(function(data){
+        
+        $('.change-password-form-submit').on('click',function(e){
+          e.preventDefault();
+          var old_password = $('.ad_old_password').val().trim();
+          var password = $('.ad_password').val().trim();
+          var confirm_password = $('.ad_confirm_password').val().trim();
+          $('.old_err').empty();
+          $('.pass_err').empty();
+          $('.c_pass_err').empty();
+          if(old_password.length < 1){
+            $('.old_err').text('Please enter old password.');
+            return false;
+          }
+          var request = $.ajax({
+            url : "{{url('check')}}",
+            type : "POST",
+            headers: {'X-CSRF-TOKEN': "{{ csrf_token() }}"},
+            data : {'old_password':old_password},
+          });
+          request.done(function(data){
+            if(data == 0 ){
+              $('.old_err').text('Old password is incorrect.');
+              return false;
+            }
+          });
+          if(password.length < 1){
+            $('.pass_err').text('Please enter password.');
+            return false;
+          }
+          if(confirm_password.length < 1){
+            $('.c_pass_err').text('Please enter confirm password.');
+            return false;
+          }
+          if(password != confirm_password){
+            $('.c_pass_err').text('Confirm password must be same.');
+            return false;
+          }
+          $('.change-password-form').submit();
+        });
+        $('.user-management-sr-no').click();
 
-            });
+        $('.BlockUser-UserManagement').click(function(){
+          var user_id = $(this).attr('data-id');
+          console.log(user_id);
+          $('.BlockUserUserManagementContinue').attr('href',"{{url('admin/block-unblock-user')}}/"+user_id+'/'+'0');
+        });
+
+         $('.UnBlockUser-UserManagement').click(function(){
+          var user_id = $(this).attr('data-id');
+          console.log(user_id);
+          $('.UnBlockUserUserManagementContinue').attr('href',"{{url('admin/block-unblock-user')}}/"+user_id+'/'+'1');
         });
       });
     </script>

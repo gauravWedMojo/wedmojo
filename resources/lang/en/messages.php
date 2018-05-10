@@ -92,7 +92,9 @@ return [
 		'resetLinkSend' => 'Password reset link sent at your registered email.',
 		'password_reset_success' => 'Password reset successful.',
 		'invalid_reset_token' => 'Invalid password reset token.',
-		'password_changed' => 'Password changed successfully.'
+		'password_changed' => 'Password changed successfully.',
+		'block_success' => 'User blocked successfully.',
+		'unblock_success' => 'User un-blocked successfully.',
 
 	],
 

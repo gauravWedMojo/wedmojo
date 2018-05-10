@@ -35,9 +35,11 @@ Route::get('/admin', function (Request $request) {
 });
 Route::group(['prefix' => '/admin' , 'middleware' => ['admin']],function(){
 		Route::match(['post','get'],'/profile','AdminController@profile');
-		// Route::match(['post','get'],'/edit-profile','AdminController@edit');
-		// Route::match(['post','get'],'/change-password','AdminController@change_password');
+		Route::match(['post','get'],'/edit-profile','AdminController@edit');
+		Route::match(['post','get'],'/change-password','AdminController@change_password');
 		Route::get('/dashboard',['uses' => 'AdminController@dashboard' , 'as' => 'admin.dashboard']);
+		Route::match(['get','post'],'/user-management',['uses' => 'AdminController@user_management' , 'as' => 'admin.user_management']);
+		Route::match(['get','post'],'/block-unblock-user/{user_id}/{status}',['uses' => 'AdminController@block_unblock_user' , 'as' => 'admin.block_unblock_user'])->where(['user_id','[0-9]+','status' => '[0-9]+']);
 });
 Route::post('admin/login_post','AdminController@index');
 Route::get('/admin/logout',['uses' => 'AdminController@logout' , 'as' => 'admin.logout']);

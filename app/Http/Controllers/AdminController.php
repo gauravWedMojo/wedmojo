@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Auth;
 use Illuminate\Http\Request;
 use App\Models\Admin;
+use App\Models\User;
 use App\Http\Controllers\SendMail;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -136,13 +137,36 @@ class AdminController extends Controller
     }
 
     public function check(Request $request){
-        dd(Auth::guard('admin')->check(['email' => Auth::guard('admin')->user()->email , 'password' => $request->old_password]));
-        if(Auth::guard('admin')->check(['email' => Auth::guard('admin')->user()->email , 'password' => $request->old_password]) === 'true'){
+        if(Hash::check($request->old_password,Auth::guard('admin')->user()->password) == 'true'){
             return 1;
         }else{
             return 0;
         }
     }
+
+    public function user_management(Request $request){
+        if($request->method() == 'GET'){
+            $data = User::orderBy('id','desc')->get();
+            return view('Admin.user-list',compact('data'));
+        } 
+    }
+
+    public function block_unblock_user(Request $request){
+        $user_id = $request->user_id;
+        $status = $request->status;
+        $user = User::find($user_id);
+        $user->status = $status;
+        $user->save();
+        switch ($status) {
+            case '0':
+                return redirect('admin/user-management')->with('block_unblock_success',__('messages.adminMessages.block_success'));
+                break;
+            case '1':
+                return redirect('admin/user-management')->with('block_unblock_success',__('messages.adminMessages.unblock_success'));
+                break;
+        }
+    }
+
     protected function guard($guard){
 
         return Auth::guard($guard);

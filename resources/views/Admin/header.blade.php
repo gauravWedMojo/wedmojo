@@ -254,7 +254,7 @@
                   </a>
                 </li>
                 <li class="sidenav-item accountNav">
-                  <a href="user-list.php" aria-haspopup="true">
+                  <a href="{{url('admin/user-management')}}" aria-haspopup="true">
                     <span class="sidenav-icon icon icon-users"></span>
                     <span class="sidenav-label">User management</span>
                   </a>
