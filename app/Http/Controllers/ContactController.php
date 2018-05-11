@@ -41,6 +41,7 @@ class ContactController extends Controller
 			case 'GET':
 				$contacts = Contacts::where('user_id',$userDetail->id)
 					->select('id','contact_name','contact_number','user_id')
+					->orderBy('contact_name','asc')
 					->skip($skip)
 					->take($take)
 					->get();
