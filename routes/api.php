@@ -76,5 +76,6 @@ Route::middleware('ApiAuthentication')->group(function(){
 	// ContactController
 		Route::post('sync_contacts','ContactController@sync_contacts');
 		Route::get('sync_contacts/{page?}','ContactController@sync_contacts');
+		Route::post('get_invite_contacts','ContactController@get_invite_contacts'); // by wedding id
 	// END
 });

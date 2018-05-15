@@ -16,6 +16,10 @@ use \App\Models\FeedReport;
 
 class FeedController extends Controller
 {
+	/*public function __construct(){
+		$timezone = \Config::get('app.timezone');
+		date_default_timezone_set('Asia/calcutta');
+	}*/
 
    	public function feeds(Request $request){
 		$userDetail = $request->userDetail;
@@ -46,7 +50,9 @@ class FeedController extends Controller
 	  		$Feeds = Feeds::insertGetId([
 				'wedding_id' => $wedding_id ,
 				'user_id' => $userDetail->id ,
-				'caption' => $caption
+				'caption' => $caption,
+				'created_at' => time(),
+				'updated_at' => time()
 			]);
 			if($key == 1){
 				foreach ($video as $index => $value) {
@@ -172,7 +178,9 @@ class FeedController extends Controller
 	      return response()->json($response,trans('messages.statusCode.SHOW_ERROR_MESSAGE'));
 	  	}else{
 	  		$Feeds = Feeds::where(['wedding_id' => $wedding_id , 'id' => $feed_id])->first();
+	  		// dd($Feeds);
 	  		$Feeds->caption = $caption;
+	  		$Feeds->updated_at = time();
 	  		$Feeds->save();
 	  		// get , delete from db and unlink files
 		  		$Attachment = Attachment::where(['feed_id' => $feed_id])->get();
@@ -202,6 +210,8 @@ class FeedController extends Controller
 						'feed_id' => $feed_id, 
 						'attachment' => $video_name , 
 						'attachment_type' => $key ,
+						'created_at' => time(),
+						'updated_at' => time(),
 					]);
 				}
 				$Feeds = Feeds::find($feed_id);
@@ -215,28 +225,30 @@ class FeedController extends Controller
 				];
 				return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
 			}
-      	if($key == 2){ //IMAGES
-	      	foreach ($image as $index => $value) {
-					$path = public_path().'/'.'Images/FunctionFeeds/Images';
-					$image_name = str_replace(" ","_",time().$index.'_'.$image[$index]->getClientOriginalName());
-					$image[$index]->move($path,$image_name);
-					$Attachment = Attachment::firstOrCreate([
-						'feed_id' => $feed_id, 
-						'attachment' => $image_name , 
-						'attachment_type' => $key ,
-					]);
-				}
-				$Get_Feeds = Feeds::find($feed_id);
-				$Get_Feeds->attachment;
-				foreach ($Get_Feeds->attachment as $key => $value) {
-					$value->attachment = url('public/Images/FunctionFeeds/Images').'/'.$value->attachment;
-				}
-				$response = [
-				  'messages' => 'Image_uploaded',
-				  'response' => $Get_Feeds,
-				];
-				return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
-      	}
+	      	if($key == 2){ //IMAGES
+		      	foreach ($image as $index => $value) {
+						$path = public_path().'/'.'Images/FunctionFeeds/Images';
+						$image_name = str_replace(" ","_",time().$index.'_'.$image[$index]->getClientOriginalName());
+						$image[$index]->move($path,$image_name);
+						$Attachment = Attachment::firstOrCreate([
+							'feed_id' => $feed_id, 
+							'attachment' => $image_name , 
+							'attachment_type' => $key ,
+							'created_at' => time(),
+							'updated_at' => time(),
+						]);
+					}
+					$Get_Feeds = Feeds::find($feed_id);
+					$Get_Feeds->attachment;
+					foreach ($Get_Feeds->attachment as $key => $value) {
+						$value->attachment = url('public/Images/FunctionFeeds/Images').'/'.$value->attachment;
+					}
+					$response = [
+					  'messages' => 'Image_uploaded',
+					  'response' => $Get_Feeds,
+					];
+					return response()->json($response,__('messages.statusCode.ACTION_COMPLETE'));
+	      	}
 	  	}
 	}
 

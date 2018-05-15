@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Log;
 use Response;
+use \App\Models\Wedding;
+use \App\Models\Wed_Function;
 use \App\Models\Contacts;
 
 class ContactController extends Controller
@@ -53,4 +55,17 @@ class ContactController extends Controller
 				break;
 		}
 	}
+
+	/*public function get_invite_contacts(Request $request){
+		$userDetail = $request->userDetail;
+		$Wedding_detail = Wedding::where('bride_id',$userDetail->id)
+			->orWhere('groom_id',$userDetail->id)
+			->first();
+		if($Wedding_detail){
+			$Wed_Function = Wed_Function::where('')->get();
+		}else{
+			dd('empty');
+		}
+		dd($Wedding);
+	}*/
 }

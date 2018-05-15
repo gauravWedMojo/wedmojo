@@ -15,12 +15,14 @@ class FunctionController extends Controller
    
    	public function create_function(Request $request){
         $UserDetail = $request->userDetail;
+        // $wedding_id = $request->wedding_id;
         $function_name = $request->function_name;
         $function_image = $request->function_image;
         $function_date = $request->function_date;
         $function_location = $request->function_location;
         $function_invite_contacts = json_decode($request->function_invite_contacts,True); // it would be array of contact id
         $validations = [
+            // 'wedding_id' => 'required',
             'function_name' => 'required',
             'function_image' => 'required',
             'function_date' => 'required',
@@ -39,6 +41,7 @@ class FunctionController extends Controller
             $function_image->move($destinationPath,$fileName);
             $function_detail->function_image = $fileName;
             $function_detail->function_location = $function_location;
+            // $function_detail->wedding_id = $wedding_id;
             $function_detail->save();
             if(count($function_invite_contacts)){
                 foreach ($function_invite_contacts as $key => $value) {
